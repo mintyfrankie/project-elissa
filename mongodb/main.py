@@ -1,1 +1,1 @@
-"""To test on MongoDB database"""
+"""A test file for MongoDB access."""
