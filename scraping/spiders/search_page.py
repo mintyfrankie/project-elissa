@@ -5,10 +5,9 @@ A spider for scraping the search pages of the website.
 from types import SimpleNamespace
 
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.common.exceptions import NoSuchElementException
-
 
 Patterns = SimpleNamespace(
     main_frame=".//div[@data-component-type='s-search-result']",
