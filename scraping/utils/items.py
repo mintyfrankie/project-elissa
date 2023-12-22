@@ -8,9 +8,9 @@ from typing import TypedDict
 class SearchItem(TypedDict):
     """Search item"""
 
-    title: str
     asin: str
-    image_url: str
+    title: str | None
+    image_url: str | None
 
 
 class ProductItem(TypedDict):
