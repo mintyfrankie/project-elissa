@@ -1,5 +1,9 @@
 # Project Elissa
 
+## TODO
+
+- [ ] Setup devcontainer with selenium and chrome
+
 ## Amazon Scrapping
 
 ## Data Storage

@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "project-elissa"
+version = "0.1.0"
+description = "The project to build a recommender for feminin hygiene products scrapped from Amazon.fr"
+authors = ["yunan.wang"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+selenium = "^4.16.0"
+undetected-chromedriver = "^3.5.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
