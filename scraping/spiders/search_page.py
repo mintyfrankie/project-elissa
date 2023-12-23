@@ -115,7 +115,7 @@ class SearchPageSpider:
         print(f"Scraped {len(items)} items.")
         next_page = get_nextpage(self.driver)
 
-        return {"next_page": next_page, "items": self.data}
+        return {"next_page": next_page, "items": items}
 
     def run(self) -> list:
         """Run the spider."""

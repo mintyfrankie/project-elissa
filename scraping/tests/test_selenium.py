@@ -9,6 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 from scraping.spiders.search_page import (
+    SearchPageSpider,
     get_asin_cards,
     get_mainframe,
     get_nextpage,
@@ -82,3 +83,13 @@ class TestSearchPageSpider:
 
         next_page = get_nextpage(setup_page)
         assert next_page, "Page is not turned"
+
+    def test_Spider(self, driver):
+        """Test the Spider."""
+
+        spider = SearchPageSpider(driver, keywords={"tampon femme"})
+        data = spider.run()
+        assert data, "Spider does not work"
+
+        asins = [item["asin"] for item in data]
+        assert len(asins) == len(set(asins)), "Duplicates ASINs are found"
