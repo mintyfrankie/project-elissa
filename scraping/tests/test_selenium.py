@@ -2,7 +2,7 @@
 For testing the Selenium scrapers
 """
 
-from urllib.parse import urljoin
+from urllib.parse import urlencode
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -19,28 +19,29 @@ class TestSearchPageSpider:
     options.add_argument("--headless=new")
     driver = webdriver.Chrome(options=options)
 
-    urls = [
-        urljoin("https://www.amazon.fr/s?k=", keyword) for keyword in QUERY_KEYWORDS
-    ]
-
     def test_antirobot(self):
         """Test if the anti-robot page is displayed."""
 
-        for url in self.urls:
+        urls = [
+            "https://www.amazon.fr/s?" + urlencode({"k": keyword})
+            for keyword in QUERY_KEYWORDS
+        ]
+
+        for url in urls:
             self.driver.get(url)
             antirobot = is_antirobot(self.driver)
 
-            assert antirobot is False, "Anti-robot page is displayed"
+            assert not antirobot, "Anti-robot page is displayed"
 
     def test_parse(self):
         """Test the parse method."""
 
-        spider = SearchPageSpider(driver=self.driver, urls=self.urls)
+        keywords = list(QUERY_KEYWORDS)
+        spider = SearchPageSpider(driver=self.driver, keywords=keywords)
 
-        for url in self.urls:
+        for url in spider.urls:
             parse_output = spider.parse(url=url)
-            print(parse_output)
 
-            assert parse_output, "No output was found"
+            assert parse_output, "Method returns empty dict, mainframe not found"
             assert parse_output["next_page"] is not None, "No next page was found"
             assert parse_output["items"] != [], "No items were found"

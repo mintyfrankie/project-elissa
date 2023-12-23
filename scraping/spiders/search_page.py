@@ -4,6 +4,7 @@ A spider for scraping the search pages of the website.
 
 from time import time
 from types import SimpleNamespace
+from urllib.parse import urlencode
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -21,7 +22,7 @@ Patterns = SimpleNamespace(
 )
 
 
-def get_main_frame(driver: webdriver.Chrome) -> WebElement | None:
+def get_mainframe(driver: webdriver.Chrome) -> WebElement | None:
     """Get the main frame of the search page."""
 
     try:
@@ -62,9 +63,13 @@ def turn_page(driver: webdriver.Chrome) -> bool:
 class SearchPageSpider:
     """A spider for scraping the search pages of the website."""
 
-    def __init__(self, driver: webdriver.Chrome, urls: list) -> None:
+    def __init__(self, driver: webdriver.Chrome, keywords: list[str]) -> None:
         self.driver = driver
-        self.urls = urls
+        self.keywords = keywords
+        self.urls = [
+            "https://www.amazon.fr/s?" + urlencode({"k": keyword})
+            for keyword in keywords
+        ]
         self.time = int(time())
         self.asins = set()
         self.data = []
@@ -75,7 +80,7 @@ class SearchPageSpider:
         self.driver.get(url)
         items = []
 
-        main_frame = get_main_frame(self.driver)
+        main_frame = get_mainframe(self.driver)
 
         if main_frame == [] or main_frame is None:
             return {}
@@ -90,14 +95,28 @@ class SearchPageSpider:
 
         next_page = turn_page(self.driver)
 
+        # FIXME: no items are found on every page
         return {"next_page": next_page, "items": self.data}
 
-    def start(self) -> None:
-        """Start the spider."""
+    def run(self) -> list:
+        """Run the spider."""
 
         for url in self.urls:
-            while True:
-                result = self.parse(url)
-                self.data += result["items"]
-                if result["next_page"] is False:
-                    break
+            output = self.parse(url)
+            self.data += output["items"]
+            while output["next_page"]:
+                output = self.parse(url)
+                self.data += output["items"]
+
+        return self.data
+
+    def persist(self) -> dict:
+        """Persist the data to the database."""
+
+        output = {}
+        output["time"] = self.time
+        output["query_keywords"] = self.keywords
+        output["item_count"] = len(self.data)
+        output["data"] = self.data
+
+        return output

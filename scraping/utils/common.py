@@ -6,4 +6,4 @@ from selenium import webdriver
 def is_antirobot(driver: webdriver.Chrome) -> bool:
     """Check if the anti-robot page is displayed."""
 
-    return "toutes nos excuses" in driver.title.lower()
+    return "nos excuses" in driver.title.lower()
