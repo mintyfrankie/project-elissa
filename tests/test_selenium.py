@@ -1,5 +1,5 @@
 """
-For testing the Selenium scrapers
+For testing the Selenium scrapers.
 """
 
 from urllib.parse import urlencode

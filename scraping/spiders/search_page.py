@@ -117,7 +117,7 @@ class SearchPageSpider:
 
         return {"next_page": next_page, "items": items}
 
-    def run(self) -> list:
+    def run(self) -> list[SearchItem]:
         """Run the spider."""
 
         for url in self.urls:
