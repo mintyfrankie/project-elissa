@@ -14,8 +14,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from scraping.utils.items import SearchItem
 
 Patterns = SimpleNamespace(
-    main_frame=".//div[@data-component-type='s-search-result']",
-    asins=".//div[@data-asin]",
+    main_frame="//span[@data-component-type='s-search-results']",
+    asins="//div[@data-asin]",
     asin_title=".//h2/a/span",
     image_url=".//img[@class='s-image']",
     pagination_next=".//a[contains(@class, 's-pagination-next')]",
@@ -41,10 +41,19 @@ def parse_asin_card(asin_card: WebElement) -> SearchItem:
     """Parse the ASIN cards."""
 
     asin = asin_card.get_attribute("data-asin")
-    title = asin_card.find_element(By.XPATH, Patterns.asin_title).get_attribute(
-        "textContent"
-    )
-    image = asin_card.find_element(By.XPATH, Patterns.image_url).get_attribute("src")
+    try:
+        title = asin_card.find_element(By.XPATH, Patterns.asin_title).get_attribute(
+            "textContent"
+        )
+    except NoSuchElementException:
+        title = None
+
+    try:
+        image = asin_card.find_element(By.XPATH, Patterns.image_url).get_attribute(
+            "src"
+        )
+    except NoSuchElementException:
+        image = None
 
     return SearchItem(asin=asin, title=title, image=image)
 
