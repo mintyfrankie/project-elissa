@@ -15,7 +15,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from scraping.utils.common import is_antirobot
 from scraping.utils.items import SearchItem
 
-Patterns = SimpleNamespace(
+PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
     asins="//div[@data-asin]",
     asin_title=".//h2/a/span",
@@ -28,7 +28,7 @@ def get_mainframe(driver: webdriver.Chrome) -> WebElement | None:
     """Get the main frame of the search page."""
 
     try:
-        return driver.find_element(By.XPATH, Patterns.main_frame)
+        return driver.find_element(By.XPATH, PATTERNS.main_frame)
     except NoSuchElementException:
         return None
 
@@ -36,7 +36,7 @@ def get_mainframe(driver: webdriver.Chrome) -> WebElement | None:
 def get_asin_cards(main_frame: WebElement) -> list[WebElement]:
     """Get the ASIN cards from the main frame."""
 
-    return main_frame.find_elements(By.XPATH, Patterns.asins)
+    return main_frame.find_elements(By.XPATH, PATTERNS.asins)
 
 
 def parse_asin_card(asin_card: WebElement) -> SearchItem:
@@ -44,14 +44,14 @@ def parse_asin_card(asin_card: WebElement) -> SearchItem:
 
     asin = asin_card.get_attribute("data-asin")
     try:
-        title = asin_card.find_element(By.XPATH, Patterns.asin_title).get_attribute(
+        title = asin_card.find_element(By.XPATH, PATTERNS.asin_title).get_attribute(
             "textContent"
         )
     except NoSuchElementException:
         title = None
 
     try:
-        image = asin_card.find_element(By.XPATH, Patterns.image_url).get_attribute(
+        image = asin_card.find_element(By.XPATH, PATTERNS.image_url).get_attribute(
             "src"
         )
     except NoSuchElementException:
@@ -65,7 +65,7 @@ def get_nextpage(driver: webdriver.Chrome) -> str | None:
     Turn the page.
     """
     try:
-        next_button = driver.find_element(By.XPATH, Patterns.pagination_next)
+        next_button = driver.find_element(By.XPATH, PATTERNS.pagination_next)
         url = urljoin("https://www.amazon.fr", next_button.get_attribute("href"))
         return url
     except NoSuchElementException:
