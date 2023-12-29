@@ -58,4 +58,4 @@ class SessionLog(TypedDict):
 
     id: int
     time: str
-    info: SessionLogInfo
+    info: SessionLogInfo | dict

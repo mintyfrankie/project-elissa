@@ -64,7 +64,7 @@ class DatabaseClient:
         assert counter is not None, "Counter is None, check the collection."
         return counter["seq"]
 
-    def log(self, info: SessionLogInfo) -> SessionLog:
+    def log(self, info: SessionLogInfo | dict) -> SessionLog:
         """Create a log entry, and return the log id."""
 
         id = self.session_id

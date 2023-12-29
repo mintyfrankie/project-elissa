@@ -7,8 +7,6 @@ from time import time
 
 from selenium import webdriver
 
-from scraping.utils.items import SessionLog
-
 
 class BaseSpider:
     """A base spider class."""
@@ -51,7 +49,6 @@ class BaseSpider:
         """Log the session activities to the database."""
 
         assert self.meta != {}, "No session activities to log."
-        assert self.meta is SessionLog, "Invalid session activities to log."
         self.mongodb.log(self.meta)
         print("Session activities are logged.")
         return self.meta
