@@ -14,6 +14,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from scraping.utils.common import is_antirobot
 from scraping.utils.items import SearchItem
 
+
 Patterns = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
     asins="//div[@data-asin]",

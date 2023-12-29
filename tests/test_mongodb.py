@@ -4,7 +4,7 @@ For testing the MongoDB pipeline.
 
 import pytest
 
-from mongodb.test import DatabaseClient
+from mongodb.client import DatabaseClient
 
 
 @pytest.fixture
