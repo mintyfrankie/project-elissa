@@ -18,7 +18,7 @@ from scraping.spiders.search_page import (
 from scraping.utils.common import is_antirobot
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def driver():
     """Create a headless Chrome driver."""
 
@@ -28,7 +28,7 @@ def driver():
         yield driver
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def setup_page(driver):
     """Set up the search page."""
 

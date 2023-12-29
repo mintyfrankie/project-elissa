@@ -7,14 +7,14 @@ import pytest
 from mongodb.client import DatabaseClient
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def db_client():
     """Create a MongoDB client."""
 
     return DatabaseClient()
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def product():
     """Create a product."""
 
@@ -42,7 +42,7 @@ class TestDatabaseClient:
     def test_log(self, db_client):
         """Test if the log is created."""
 
-        logid = db_client.log("Test log by pytest")
+        logid = db_client.log("Pytest: test_log")
         assert logid, "Log is not created"
 
     def test_update_product(self, db_client, product):
