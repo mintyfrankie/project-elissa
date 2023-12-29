@@ -3,7 +3,6 @@
 ## TODO
 
 - [ ] Setup devcontainer with selenium and chrome
-- [ ] Check 1Password for credentials
 
 ## Amazon Scrapping
 
