@@ -11,8 +11,7 @@ class SearchItem(TypedDict):
     asin: str
     title: str | None
     image_url: str | None
-    last_updated_id: NotRequired[int]
-    last_updated_time: NotRequired[str]
+    metadata: NotRequired[dict]
 
 
 class ProductItem(TypedDict):

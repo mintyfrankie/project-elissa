@@ -92,7 +92,7 @@ class SearchPageSpider:
 
         print("SearchPageSpider is initialized.")
         self.mongodb = DatabaseClient()
-        self.session_id = self.mongodb.get_sessionid()
+        self.session_id = self.mongodb.session_id
         assert self.mongodb.check_connection(), "Connection is not established."
         print("DatabaseClient is initialized.")
 
@@ -127,7 +127,7 @@ class SearchPageSpider:
 
         for asin_card in asin_cards:
             item = parse_asin_card(asin_card)
-            if item["asin"] not in self.asins:
+            if item["asin"] not in self.asins and item["asin"] != "":
                 self.asins.add(item["asin"])
                 items.append(item)
 
@@ -137,34 +137,47 @@ class SearchPageSpider:
         return {"next_page": next_page, "items": items}
 
     def run(self) -> list[SearchItem]:
-        """Run the spider."""
+        """
+        Run the spider.
 
-        def process_items(items):
-            for item in items:
-                if not self.mongodb.check_product(item["asin"]):
-                    item["last_updated_id"] = self.session_id
-                    item["last_updated_time"] = self.strtime
-                    self.mongodb.update_product(item)
-                    print(f"Updated {item['asin']}.")
+        The spider will scrape the search pages for the given keywords, collecting all ASINs on the pages.
+        If the scraped ASIN is not in the database, the spider will create a new document for it.
+        """
 
+        def process_item(item: SearchItem):
+            """Process the item."""
+            if not self.mongodb.check_product(item["asin"]):
+                item["metadata"] = {}
+                item["metadata"]["last_session_id"] = self.session_id
+                item["metadata"]["last_session_time"] = self.strtime
+                item["metadata"]["product_page_scraped"] = False
+                self.mongodb.update_product(item)
+                print(f"Updated {item['asin']}.")
+                return 1
+            else:
+                print(f"{item['asin']} is already in the database.")
+                return 0
+
+        counter = 0
         for url in self.urls:
             while url:
                 output = self.parse(url)
                 items = output["items"]
-                process_items(items)
+                for item in items:
+                    counter += process_item(item)
                 self.data.extend(items)
                 url = output.get("next_page")
 
         # Log the meta data.
-        ACTION_TYPE = "search_page"
+        ACTION_TYPE = "Search Page Scraping"
         item_count = len(self.data)
 
         self.meta["action_type"] = ACTION_TYPE
         self.meta["action_time"] = self.time
-        self.meta["item_count"] = item_count
+        self.meta["update_count"] = counter
         self.meta["query_keywords"] = list(self.keywords)
 
-        print(f"Scraped {item_count} items in total.")
+        print(f"Scraped {item_count} items in total, {counter} items are new.")
         return self.data
 
     def log(self) -> dict:

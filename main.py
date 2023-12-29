@@ -8,6 +8,12 @@ options = Options()
 options.add_argument("--headless")
 driver = webdriver.Chrome(options=options)
 
-with SearchPageSpider(driver, QUERY_KEYWORDS) as spider:
-    spider.run()
-    spider.log()
+
+def scrape_search_page():
+    with SearchPageSpider(driver, QUERY_KEYWORDS) as spider:
+        spider.run()
+        spider.log()
+
+
+if __name__ == "__main__":
+    scrape_search_page()

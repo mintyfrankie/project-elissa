@@ -6,13 +6,15 @@ import datetime
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+from scraping.utils.items import SearchItem
+
 
 class DatabaseClient:
     """A class to upload data to MongoDB."""
 
     DB_NAME = "amazon"
     ITEM_COLLECTION_NAME = "items"
-    LOG_COLLECTION_NAME = "logs"
+    LOG_COLLECTION_NAME = "session_logs"
     COUNTER_COLLECTION_NAME = "log_counters"
 
     def __init__(self) -> None:
@@ -62,14 +64,14 @@ class DatabaseClient:
         assert counter is not None, "Counter is None, check the collection."
         return counter["seq"]
 
-    def log(self, message: dict | None = None) -> dict:
+    def log(self, info: dict | None = None) -> dict:
         """Create a log entry, and return the log id."""
 
         id = self.session_id
         content = {
             "id": id,
-            "time": datetime.datetime.now(datetime.UTC),
-            "message": message,
+            "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "info": info,
         }
         self.log_collection.insert_one(content)
         return content
@@ -79,7 +81,7 @@ class DatabaseClient:
 
         return self.collection.count_documents({"asin": asin}) > 0
 
-    def update_product(self, product: dict) -> bool:
+    def update_product(self, product: SearchItem) -> bool:
         """Update a product in the database."""
 
         result = self.collection.update_one(
