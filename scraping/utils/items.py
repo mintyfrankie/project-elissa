@@ -2,7 +2,7 @@
 Identify the fields for the items
 """
 
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 
 class SearchItem(TypedDict):
@@ -11,6 +11,8 @@ class SearchItem(TypedDict):
     asin: str
     title: str | None
     image_url: str | None
+    last_updated_id: NotRequired[int]
+    last_updated_time: NotRequired[str]
 
 
 class ProductItem(TypedDict):

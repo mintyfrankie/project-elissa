@@ -31,7 +31,14 @@ class DatabaseClient:
         self.counter_collection = self.db[self.COUNTER_COLLECTION_NAME]
         self.session_id = self.get_sessionid()
 
-    def __close__(self) -> None:
+    def __enter__(self):
+        return self
+
+    def __exit__(self) -> None:
+        self.client.close()
+
+    def close(self):
+        """Close the connection."""
         self.client.close()
 
     def check_connection(self) -> bool:

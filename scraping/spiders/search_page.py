@@ -2,6 +2,7 @@
 A spider for scraping the search pages of the website.
 """
 
+from datetime import datetime
 from time import time
 from types import SimpleNamespace
 from urllib.parse import urlencode, urljoin
@@ -13,7 +14,6 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from scraping.utils.common import is_antirobot
 from scraping.utils.items import SearchItem
-
 
 Patterns = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -57,7 +57,7 @@ def parse_asin_card(asin_card: WebElement) -> SearchItem:
     except NoSuchElementException:
         image = None
 
-    return SearchItem(asin=asin, title=title, image=image)
+    return SearchItem(asin=asin, title=title, image=image)  # type: ignore
 
 
 def get_nextpage(driver: webdriver.Chrome) -> str | None:
@@ -76,6 +76,8 @@ class SearchPageSpider:
     """A spider for scraping the search pages of the website."""
 
     def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
+        from mongodb.client import DatabaseClient
+
         self.driver = driver
         self.keywords = keywords
         self.urls = [
@@ -83,10 +85,26 @@ class SearchPageSpider:
             for keyword in keywords
         ]
         self.time = int(time())
+        self.strtime = datetime.fromtimestamp(self.time).strftime("%Y-%m-%d %H:%M:%S")
         self.asins = set()
+        self.meta = {}
         self.data = []
 
         print("SearchPageSpider is initialized.")
+        self.mongodb = DatabaseClient()
+        self.session_id = self.mongodb.get_sessionid()
+        assert self.mongodb.check_connection(), "Connection is not established."
+        print("DatabaseClient is initialized.")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.mongodb.close()
+        print("DatabaseClient is closed.")
+        self.driver.close()
+        self.driver.quit()
+        print("SearchPageSpider is closed.")
 
     def parse(self, url: str) -> dict:
         """Parse a searching page."""
@@ -121,23 +139,37 @@ class SearchPageSpider:
     def run(self) -> list[SearchItem]:
         """Run the spider."""
 
-        for url in self.urls:
-            output = self.parse(url)
-            self.data += output["items"]
-            while output["next_page"] is not None:
-                output = self.parse(output["next_page"])
-                self.data += output["items"]
+        def process_items(items):
+            for item in items:
+                if not self.mongodb.check_product(item["asin"]):
+                    item["last_updated_id"] = self.session_id
+                    item["last_updated_time"] = self.strtime
+                    self.mongodb.update_product(item)
+                    print(f"Updated {item['asin']}.")
 
-        print(f"Scraped {len(self.data)} items in total.")
+        for url in self.urls:
+            while url:
+                output = self.parse(url)
+                items = output["items"]
+                process_items(items)
+                self.data.extend(items)
+                url = output.get("next_page")
+
+        # Log the meta data.
+        ACTION_TYPE = "search_page"
+        item_count = len(self.data)
+
+        self.meta["action_type"] = ACTION_TYPE
+        self.meta["action_time"] = self.time
+        self.meta["item_count"] = item_count
+        self.meta["query_keywords"] = list(self.keywords)
+
+        print(f"Scraped {item_count} items in total.")
         return self.data
 
-    def persist(self) -> dict:
-        """Persist the data to the database."""
+    def log(self) -> dict:
+        """Log the session activities to the database."""
 
-        output = {}
-        output["time"] = self.time
-        output["query_keywords"] = self.keywords
-        output["item_count"] = len(self.data)
-        output["data"] = self.data
-
-        return output
+        self.mongodb.log(self.meta)
+        print("Session activities are logged.")
+        return self.meta
