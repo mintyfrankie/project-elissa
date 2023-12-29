@@ -1,25 +1,26 @@
-"""A test file for MongoDB access."""
+"""A client for MongoDB access."""
 
 
 import datetime
 
-from dotenv import dotenv_values
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-
-config = dotenv_values(".env")
 
 
 class DatabaseClient:
     """A class to upload data to MongoDB."""
 
-    URI = config["MONGODB_URI"]
     DB_NAME = "amazon"
     ITEM_COLLECTION_NAME = "items"
     LOG_COLLECTION_NAME = "logs"
     COUNTER_COLLECTION_NAME = "log_counters"
 
     def __init__(self) -> None:
+        from dotenv import dotenv_values
+
+        config = dotenv_values(".env")
+        self.URI = config["MONGODB_URI"]
+
         self.client = MongoClient(
             self.URI,
             server_api=ServerApi(version="1"),
@@ -50,9 +51,10 @@ class DatabaseClient:
         )
 
         counter = self.counter_collection.find_one({"_id": "logid"})
+        assert counter is not None, "Counter is None, check the collection."
         return counter["seq"]
 
-    def log(self, message: str | None = None) -> int:
+    def log(self, message: dict | None = None) -> int:
         """Create a log entry, and return the log id."""
 
         logid = self.update_log_counter()
