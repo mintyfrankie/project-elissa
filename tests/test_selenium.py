@@ -90,6 +90,7 @@ class TestSearchPageSpider:
         spider = SearchPageSpider(driver, keywords={"tampon femme"})
         data = spider.run()
         assert data, "Spider does not work"
+        assert spider.meta is not None, "Meta data is not found"
 
         asins = [item["asin"] for item in data]
         assert len(asins) == len(set(asins)), "Duplicates ASINs are found"

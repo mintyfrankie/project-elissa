@@ -29,6 +29,7 @@ class DatabaseClient:
         self.collection = self.db[self.ITEM_COLLECTION_NAME]
         self.log_collection = self.db[self.LOG_COLLECTION_NAME]
         self.counter_collection = self.db[self.COUNTER_COLLECTION_NAME]
+        self.session_id = self.get_sessionid()
 
     def __close__(self) -> None:
         self.client.close()
@@ -42,7 +43,7 @@ class DatabaseClient:
         except Exception:
             return False
 
-    def update_log_counter(self) -> int:
+    def get_sessionid(self) -> int:
         """Update the log counter, and return the current count."""
 
         self.counter_collection.update_one(
@@ -54,18 +55,17 @@ class DatabaseClient:
         assert counter is not None, "Counter is None, check the collection."
         return counter["seq"]
 
-    def log(self, message: dict | None = None) -> int:
+    def log(self, message: dict | None = None) -> dict:
         """Create a log entry, and return the log id."""
 
-        logid = self.update_log_counter()
-        self.log_collection.insert_one(
-            {
-                "logid": logid,
-                "time": datetime.datetime.now(datetime.UTC),
-                "message": message,
-            }
-        )
-        return logid
+        id = self.session_id
+        content = {
+            "id": id,
+            "time": datetime.datetime.now(datetime.UTC),
+            "message": message,
+        }
+        self.log_collection.insert_one(content)
+        return content
 
     def check_product(self, asin: str) -> bool:
         """Check if a product is in the database."""
