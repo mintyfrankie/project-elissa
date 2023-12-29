@@ -48,6 +48,7 @@ class BaseSpider:
     def log(self) -> dict:
         """Log the session activities to the database."""
 
+        assert self.meta != {}, "No session activities to log."
         self.mongodb.log(self.meta)
         print("Session activities are logged.")
         return self.meta

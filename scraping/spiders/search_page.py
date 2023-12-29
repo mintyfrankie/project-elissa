@@ -2,8 +2,6 @@
 A spider for scraping the search pages of the website.
 """
 
-from datetime import datetime
-from time import time
 from types import SimpleNamespace
 from urllib.parse import urlencode, urljoin
 
@@ -14,6 +12,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from scraping.utils.common import is_antirobot
 from scraping.utils.items import SearchItem
+from scraping.utils.spiders import BaseSpider
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -72,39 +71,21 @@ def get_nextpage(driver: webdriver.Chrome) -> str | None:
         return None
 
 
-class SearchPageSpider:
+class SearchPageSpider(BaseSpider):
     """A spider for scraping the search pages of the website."""
 
     def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
-        from mongodb.client import DatabaseClient
+        super().__init__(driver, keywords)
 
-        self.driver = driver
-        self.keywords = keywords
         self.urls = [
             "https://www.amazon.fr/s?" + urlencode({"k": keyword})
             for keyword in keywords
         ]
-        self.time = int(time())
-        self.strtime = datetime.fromtimestamp(self.time).strftime("%Y-%m-%d %H:%M:%S")
         self.asins = set()
         self.meta = {}
         self.data = []
 
         print("SearchPageSpider is initialized.")
-        self.mongodb = DatabaseClient()
-        self.session_id = self.mongodb.session_id
-        assert self.mongodb.check_connection(), "Connection is not established."
-        print("DatabaseClient is initialized.")
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.mongodb.close()
-        print("DatabaseClient is closed.")
-        self.driver.close()
-        self.driver.quit()
-        print("SearchPageSpider is closed.")
 
     def parse(self, url: str) -> dict:
         """Parse a searching page."""
@@ -179,10 +160,3 @@ class SearchPageSpider:
 
         print(f"Scraped {item_count} items in total, {counter} items are new.")
         return self.data
-
-    def log(self) -> dict:
-        """Log the session activities to the database."""
-
-        self.mongodb.log(self.meta)
-        print("Session activities are logged.")
-        return self.meta
