@@ -6,7 +6,7 @@ import datetime
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from scraping.utils.items import SearchItem
+from scraping.utils.items import SearchItem, SessionLog, SessionLogInfo
 
 
 class DatabaseClient:
@@ -64,15 +64,15 @@ class DatabaseClient:
         assert counter is not None, "Counter is None, check the collection."
         return counter["seq"]
 
-    def log(self, info: dict | None = None) -> dict:
+    def log(self, info: SessionLogInfo) -> SessionLog:
         """Create a log entry, and return the log id."""
 
         id = self.session_id
-        content = {
-            "id": id,
-            "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "info": info,
-        }
+        content = SessionLog(
+            id=id,
+            time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            info=info,
+        )
         self.log_collection.insert_one(content)
         return content
 

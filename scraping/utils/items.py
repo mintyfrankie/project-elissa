@@ -42,3 +42,20 @@ class ReviewItem(TypedDict):
     title: str | None
     content: str | None
     metadata: str | None
+
+
+class SessionLogInfo(TypedDict):
+    """A session log info."""
+
+    action_type: str
+    action_time: int
+    update_count: int
+    query_keywords: NotRequired[list[str]]
+
+
+class SessionLog(TypedDict):
+    """A session log."""
+
+    id: int
+    time: str
+    info: SessionLogInfo
