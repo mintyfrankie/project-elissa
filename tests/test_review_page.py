@@ -56,7 +56,6 @@ class TestReviewPageSpider:
         """Test if the review cards are found."""
         review_cards = get_review_cards(review_page)
         assert review_cards, "Review cards are not found"
-        return review_cards[0]
 
     def test_get_rating(self, review_page):
         """Test if the rating is found."""
