@@ -21,8 +21,12 @@ class DatabaseClient:
     def __init__(self) -> None:
         from dotenv import dotenv_values
 
-        config = dotenv_values(".env")
-        self.URI = config["MONGODB_URI"]
+        try:
+            config = dotenv_values(".env")
+            self.URI = config["MONGODB_URI"]
+        except Exception:
+            ERROR_MESSAGE = "Failed to load MONGODB_URI from file `.env`. Make sure you have created the file and set the variable."
+            raise ValueError(ERROR_MESSAGE)
 
         self.client = MongoClient(
             self.URI,

@@ -22,7 +22,7 @@ class BaseSpider:
         self.mongodb = DatabaseClient()
         self.session_id = self.mongodb.session_id
         assert self.mongodb.check_connection(), "Connection is not established."
-        print("DatabaseClient is initialized.")
+        print("DatabaseClient initialized with successful connection to MongoDB.")
 
     def __enter__(self):
         return self
