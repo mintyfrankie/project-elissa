@@ -11,11 +11,10 @@ from selenium import webdriver
 class BaseSpider:
     """A base spider class."""
 
-    def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
+    def __init__(self, driver: webdriver.Chrome) -> None:
         from mongodb.client import DatabaseClient
 
         self.driver = driver
-        self.keywords = keywords
         self.time = int(time())
         self.strtime = datetime.fromtimestamp(self.time).strftime("%Y-%m-%d %H:%M:%S")
         self.meta = {}

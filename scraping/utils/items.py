@@ -5,13 +5,21 @@ Identify the fields for the items
 from typing import NotRequired, TypedDict
 
 
+class ItemMetadata(TypedDict):
+    """Item metadata"""
+
+    last_session_id: int
+    last_session_time: str
+    product_page_scraped: bool
+
+
 class SearchItem(TypedDict):
     """Search item"""
 
+    _metadata: ItemMetadata
     asin: str
     title: str | None
-    image_url: str | None
-    metadata: NotRequired[dict]
+    thumbnail: str | None
 
 
 class ProductItem(TypedDict):
@@ -20,15 +28,16 @@ class ProductItem(TypedDict):
     A product on Amazon.
     """
 
+    _metadata: ItemMetadata
     asin: str
     title: str
     brand: str
+    thumbnail: str
     price: float | None
     unities: float | None
     avg_rating: float | None
     num_reviews: int | None
     features_bullets: list[str] | None
-    image_url: str
     review_url: str | None
 
 
