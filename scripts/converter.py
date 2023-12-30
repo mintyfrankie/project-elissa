@@ -59,6 +59,7 @@ def export_reviews():
 
     items = [review for item in items for review in rowify_reviews(item)]
     reviews = pd.DataFrame(items)
+    reviews = reviews[["asin"] + [col for col in reviews.columns if col != "asin"]]
     print(f"Queried {len(reviews)} reviews.")
 
     with open(DATA_PATH / "reviews.csv", "w") as file:
