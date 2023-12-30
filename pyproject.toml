@@ -13,6 +13,7 @@ pymongo = "^4.6.1"
 ipykernel = "^6.27.1"
 pandas = "^2.1.4"
 python-dotenv = "^1.0.0"
+matplotlib = "^3.8.2"
 
 
 [build-system]
