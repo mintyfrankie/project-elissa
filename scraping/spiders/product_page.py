@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
 
 PATTERNS = SimpleNamespace(
@@ -58,6 +59,7 @@ def get_price(driver: webdriver.Chrome) -> float | None:
             .replace("\xa0", " ")
             .split(" ", maxsplit=1)[0]
             .replace(",", ".")
+            .replace("€", "")
         )
         return price
 
@@ -230,11 +232,13 @@ class ProductPageSpider(BaseSpider):
         def process_item(asin: str) -> int:
             url = f"https://www.amazon.fr/dp/{asin}"
             product = self.parse(url)
-            product["_metadata"] = {
+            output: ItemMetadata = {
                 "last_session_id": self.session_id,
                 "last_session_time": self.strtime,
                 "product_page_scraped": True,
+                "review_page_scraped": False,
             }
+            product["_metadata"] = output
             self.mongodb.collection.update_one(
                 {"asin": asin},
                 {"$set": product},

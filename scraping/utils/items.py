@@ -11,6 +11,7 @@ class ItemMetadata(TypedDict):
     last_session_id: int
     last_session_time: str
     product_page_scraped: bool
+    review_page_scraped: bool
 
 
 class SearchItem(TypedDict):

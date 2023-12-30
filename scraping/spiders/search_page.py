@@ -145,6 +145,7 @@ class SearchPageSpider(BaseSpider):
                     last_session_id=self.session_id,
                     last_session_time=self.strtime,
                     product_page_scraped=False,
+                    review_page_scraped=False,
                 )
 
                 self.mongodb.update_product(item)
