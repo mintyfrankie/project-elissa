@@ -81,6 +81,11 @@ class DatabaseClient:
 
         return self.collection.count_documents({"asin": asin}) > 0
 
+    def find_product(self, asin: str) -> dict | None:
+        """Find a product in the database."""
+
+        return self.collection.find_one({"asin": asin})
+
     def update_product(self, product: SearchItem) -> bool:
         """Update a product in the database."""
 
