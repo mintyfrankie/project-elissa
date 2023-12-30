@@ -13,11 +13,11 @@ from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
 
 PATTERNS = SimpleNamespace(
-    review_card=".//div[@data-hook='review']",
-    rating="//i[@data-hook='review-star-rating']//span",
-    title="//a[@data-hook='review-title']//span[not(@class)]",
-    metadata="//span[@data-hook='review-date']",
-    body="//span[@data-hook='review-body']",
+    review_card="//div[@data-hook='review']",
+    rating=".//i[@data-hook='review-star-rating']//span",
+    title=".//a[@data-hook='review-title']//span[not(@class)]",
+    metadata=".//span[@data-hook='review-date']",
+    body=".//span[@data-hook='review-body']",
     next_page="//li[@class='a-last']//a[@href]",
 )
 
@@ -111,34 +111,6 @@ class ReviewPageSpider(BaseSpider):
         super().__init__(driver)
         self.queue = []
 
-    def parse(self, url: str, max_page: int = 10):
-        """
-        Parse the review pages of a product.
-        """
-
-        if max_page == 0:
-            return
-
-        self.driver.get(url)
-
-        review_cards = get_review_cards(self.driver)
-        if review_cards:
-            for review_card in review_cards:
-                review = {}
-                metadata = get_metadata(review_card)
-                review["rating"] = get_rating(review_card)
-                review["title"] = get_title(review_card)
-                review["country"] = None
-                review["date"] = None
-                review["body"] = get_body(review_card)
-                if metadata:
-                    review["country"], review["date"] = metadata
-                yield review
-
-            next_page = get_next_page(self.driver)
-            if next_page:
-                yield from self.parse(next_page, max_page - 1)
-
     def query(self) -> list[dict]:
         """
         Get the products to scrape.
@@ -153,7 +125,32 @@ class ReviewPageSpider(BaseSpider):
         print(f"Found {len(items)} products to scrape.")
         return items
 
-    def run(self) -> None:
+    def parse(self, url: str) -> dict:
+        """
+        Parse a review page of a product.
+        """
+
+        self.driver.get(url)
+
+        review_cards = get_review_cards(self.driver)
+        next_page = get_next_page(self.driver)
+        reviews = []
+        if review_cards:
+            for review_card in review_cards:
+                review = {}
+                metadata = get_metadata(review_card)
+                review["rating"] = get_rating(review_card)
+                review["title"] = get_title(review_card)
+                review["country"] = None
+                review["date"] = None
+                review["body"] = get_body(review_card)
+                if metadata:
+                    review["country"], review["date"] = metadata
+                reviews.append(review)
+
+        return {"reviews": reviews, "next_page": next_page}
+
+    def run(self, max_page: int = 10) -> None:
         """
         Run the spider.
         """
@@ -161,19 +158,26 @@ class ReviewPageSpider(BaseSpider):
         self.query()
 
         def process_item(product: dict) -> int:
+            """Process the item."""
+
             asin = product["asin"]
             review_url = product["review_url"]
-            print(f"Scraping {asin}...")
-            reviews = self.parse(review_url, max_page=10)
-            reviews = list(reviews)
 
-            output: ItemMetadata = {
+            reviews = []
+            page_count = 0
+            while review_url and page_count < max_page:
+                output = self.parse(review_url)
+                reviews += output["reviews"]
+                review_url = output["next_page"]
+                page_count += 1
+
+            metadata: ItemMetadata = {
                 "last_session_id": self.session_id,
                 "last_session_time": self.strtime,
                 "product_page_scraped": True,
                 "review_page_scraped": True,
             }
-            product["_metadata"] = output
+            product["_metadata"] = metadata
             product["reviews"] = reviews
 
             self.mongodb.collection.update_one(

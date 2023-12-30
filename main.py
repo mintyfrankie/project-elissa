@@ -23,7 +23,7 @@ def scrape_product_page():
 
 def scrape_review_page():
     with ReviewPageSpider(driver) as spider:
-        spider.run()
+        spider.run(max_page=4)
 
 
 if __name__ == "__main__":

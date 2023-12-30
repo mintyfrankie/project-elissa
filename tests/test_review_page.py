@@ -13,7 +13,6 @@ from scraping.spiders.review_page import (
     get_rating,
     get_review_cards,
     get_title,
-    parse_item,
 )
 from scraping.utils.common import is_antirobot
 
@@ -95,4 +94,7 @@ class TestReviewPageSpider:
         """Test if the next page is found."""
         next_page = get_next_page(review_page)
         assert next_page, "Next page is not found"
+        assert (
+            next_page != review_page.current_url
+        ), "Next page is the same as current page"
         assert isinstance(next_page, str), "Next page is not a string"
