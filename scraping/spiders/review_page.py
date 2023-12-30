@@ -117,7 +117,7 @@ class ReviewPageSpider(BaseSpider):
         """
 
         pipeline = [
-            # {"$match": {"_metadata.review_page_scraped": False}},
+            {"$match": {"_metadata.review_page_scraped": False}},
             {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
         ]
         items = list(self.mongodb.collection.aggregate(pipeline))

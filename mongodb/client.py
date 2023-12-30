@@ -3,6 +3,7 @@
 
 import datetime
 
+from bson import json_util
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
@@ -36,7 +37,7 @@ class DatabaseClient:
     def __enter__(self):
         return self
 
-    def __exit__(self) -> None:
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.close()
 
     def close(self):
@@ -96,6 +97,16 @@ class DatabaseClient:
         )
 
         return result.acknowledged
+
+    def snapshot(self, download_path: str | None = None) -> list[dict]:
+        """Download a snapshot of the collection and return the result."""
+
+        cursor = self.collection.find({})
+        if download_path is not None:
+            with open(download_path, "w", encoding="utf-8") as f:
+                f.write(json_util.dumps(list(cursor)))
+            print(f"Snapshot is saved to {download_path}.")
+        return list(cursor)
 
 
 if __name__ == "__main__":
