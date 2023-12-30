@@ -10,8 +10,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
 from scraping.utils.common import is_antirobot
-from scraping.utils.items import SearchItem
+from scraping.utils.items import ItemMetadata, SearchItem
 from scraping.utils.spiders import BaseSpider
 
 PATTERNS = SimpleNamespace(
@@ -38,16 +39,18 @@ def get_asin_cards(main_frame: WebElement) -> list[WebElement]:
     return main_frame.find_elements(By.XPATH, PATTERNS.asins)
 
 
-def parse_asin_card(asin_card: WebElement) -> SearchItem:
+def parse_asin_card(asin_card: WebElement) -> dict:
     """Parse the ASIN cards."""
 
     asin = asin_card.get_attribute("data-asin")
+    if not asin:
+        asin = ""
     try:
         title = asin_card.find_element(By.XPATH, PATTERNS.asin_title).get_attribute(
             "textContent"
         )
     except NoSuchElementException:
-        title = None
+        title = ""
 
     try:
         image = asin_card.find_element(By.XPATH, PATTERNS.image_url).get_attribute(
@@ -56,7 +59,13 @@ def parse_asin_card(asin_card: WebElement) -> SearchItem:
     except NoSuchElementException:
         image = None
 
-    return SearchItem(asin=asin, title=title, image=image)  # type: ignore
+    output = {
+        "asin": asin,
+        "title": title,
+        "thumbnail": image,
+    }
+
+    return output
 
 
 def get_nextpage(driver: webdriver.Chrome) -> str | None:
@@ -75,8 +84,9 @@ class SearchPageSpider(BaseSpider):
     """A spider for scraping the search pages of the website."""
 
     def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
-        super().__init__(driver, keywords)
+        super().__init__(driver)
 
+        self.keywords = keywords
         self.urls = [
             "https://www.amazon.fr/s?" + urlencode({"k": keyword})
             for keyword in keywords
@@ -108,7 +118,10 @@ class SearchPageSpider(BaseSpider):
 
         for asin_card in asin_cards:
             item = parse_asin_card(asin_card)
-            if item["asin"] not in self.asins and item["asin"] != "":
+            if item["asin"] != "" and item["asin"] not in self.asins:
+                if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
+                    print(f"{item['asin']} is filtered.")
+                    continue
                 self.asins.add(item["asin"])
                 items.append(item)
 
@@ -125,13 +138,15 @@ class SearchPageSpider(BaseSpider):
         If the scraped ASIN is not in the database, the spider will create a new document for it.
         """
 
-        def process_item(item: SearchItem):
+        def process_item(item: SearchItem) -> int:
             """Process the item."""
             if not self.mongodb.check_product(item["asin"]):
-                item["metadata"] = {}
-                item["metadata"]["last_session_id"] = self.session_id
-                item["metadata"]["last_session_time"] = self.strtime
-                item["metadata"]["product_page_scraped"] = False
+                item["_metadata"] = ItemMetadata(
+                    last_session_id=self.session_id,
+                    last_session_time=self.strtime,
+                    product_page_scraped=False,
+                )
+
                 self.mongodb.update_product(item)
                 print(f"Updated {item['asin']}.")
                 return 1
@@ -159,4 +174,5 @@ class SearchPageSpider(BaseSpider):
         self.meta["query_keywords"] = list(self.keywords)
 
         print(f"Scraped {item_count} items in total, {counter} items are new.")
+        self.log()
         return self.data
