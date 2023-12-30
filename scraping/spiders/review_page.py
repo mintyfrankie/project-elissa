@@ -9,6 +9,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from scraping.utils.items import ItemMetadata
+from scraping.utils.spiders import BaseSpider
+
 PATTERNS = SimpleNamespace(
     review_card=".//div[@data-hook='review']",
     rating="//i[@data-hook='review-star-rating']//span",
@@ -65,7 +68,7 @@ def get_metadata(review_card: WebElement) -> tuple[str, str] | None:
         if metadata:
             metadata = metadata.split("le", maxsplit=1)
             if len(metadata) == 2:
-                country = metadata[0].strip().replace("commenté", "")
+                country = metadata[0].replace("Commenté", "").strip()
                 date = metadata[1].strip()
                 return country, date
     return None
@@ -79,7 +82,9 @@ def get_body(review_card: WebElement) -> str | None:
     body = review_card.find_elements(By.XPATH, PATTERNS.body)
     if body:
         body = body[0].get_attribute("textContent")
-        return body
+        if body:
+            body = body.strip()
+            return body
     return None
 
 
@@ -95,3 +100,102 @@ def get_next_page(driver: webdriver.Chrome) -> str | None:
             url = urljoin("https://amazon.fr", next_page)
             return url
     return None
+
+
+class ReviewPageSpider(BaseSpider):
+    """
+    A spider for scraping the review pages of the website.
+    """
+
+    def __init__(self, driver: webdriver.Chrome) -> None:
+        super().__init__(driver)
+        self.queue = []
+
+    def parse(self, url: str, max_page: int = 10):
+        """
+        Parse the review pages of a product.
+        """
+
+        if max_page == 0:
+            return
+
+        self.driver.get(url)
+
+        review_cards = get_review_cards(self.driver)
+        if review_cards:
+            for review_card in review_cards:
+                review = {}
+                metadata = get_metadata(review_card)
+                review["rating"] = get_rating(review_card)
+                review["title"] = get_title(review_card)
+                review["country"] = None
+                review["date"] = None
+                review["body"] = get_body(review_card)
+                if metadata:
+                    review["country"], review["date"] = metadata
+                yield review
+
+            next_page = get_next_page(self.driver)
+            if next_page:
+                yield from self.parse(next_page, max_page - 1)
+
+    def query(self) -> list[dict]:
+        """
+        Get the products to scrape.
+        """
+
+        pipeline = [
+            # {"$match": {"_metadata.review_page_scraped": False}},
+            {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
+        ]
+        items = list(self.mongodb.collection.aggregate(pipeline))
+        self.queue = items
+        print(f"Found {len(items)} products to scrape.")
+        return items
+
+    def run(self) -> None:
+        """
+        Run the spider.
+        """
+
+        self.query()
+
+        def process_item(product: dict) -> int:
+            asin = product["asin"]
+            review_url = product["review_url"]
+            print(f"Scraping {asin}...")
+            reviews = self.parse(review_url, max_page=10)
+            reviews = list(reviews)
+
+            output: ItemMetadata = {
+                "last_session_id": self.session_id,
+                "last_session_time": self.strtime,
+                "product_page_scraped": True,
+                "review_page_scraped": True,
+            }
+            product["_metadata"] = output
+            product["reviews"] = reviews
+
+            self.mongodb.collection.update_one(
+                {"asin": asin},
+                {"$set": product},
+            )
+
+            print(f"Scraped {asin}.")
+            return 1
+
+        counter = 0
+        for product in self.queue:
+            asin = product["asin"]
+            counter += process_item(product)
+            print(f"Updated {asin} --- Progress {counter}/{len(self.queue)}")
+
+        # Log the session.
+        ACTION_TYPE = "Review Page Scraping"
+
+        self.meta["action_type"] = ACTION_TYPE
+        self.meta["action_time"] = self.time
+        self.meta["update_count"] = counter
+
+        print(f"Scraped {counter} products.")
+        self.log()

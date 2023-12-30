@@ -13,6 +13,7 @@ from scraping.spiders.review_page import (
     get_rating,
     get_review_cards,
     get_title,
+    parse_item,
 )
 from scraping.utils.common import is_antirobot
 
