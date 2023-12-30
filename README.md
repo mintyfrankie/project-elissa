@@ -45,3 +45,4 @@ The project uses `pytest` as the testing framework. The `tests` module contains 
 ## TODO
 
 - [ ] Setup devcontainer with selenium and chrome
+- [ ] Find ways to exclude irrelevant products in the database

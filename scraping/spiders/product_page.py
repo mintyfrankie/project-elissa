@@ -22,7 +22,25 @@ PATTERNS = SimpleNamespace(
     brand_id="bylineInfo",
     rating_id="acrPopover",
     num_reviews_id="acrCustomerReviewText",
+    category_id="wayfinding-breadcrumbs_feature_div",
+    category_section=".//li[1]/a",
 )
+
+
+def check_category(driver: webdriver.Chrome) -> bool:
+    """
+    Check if the product is in the right category.
+    """
+
+    TARGET_CATEGORY = "Hygiène et Santé"
+    category = driver.find_elements(By.XPATH, PATTERNS.category_id)
+    if category:
+        category = category[0].find_elements(By.XPATH, PATTERNS.category_section)
+        if category:
+            category = category[0].get_attribute("textContent")
+            if category and TARGET_CATEGORY in category:
+                return True
+    return False
 
 
 def get_price(driver: webdriver.Chrome) -> float | None:
