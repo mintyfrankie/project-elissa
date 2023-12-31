@@ -15,6 +15,7 @@ pandas = "^2.1.4"
 python-dotenv = "^1.0.0"
 matplotlib = "^3.8.2"
 fastapi = "^0.108.0"
+streamlit = "^1.29.0"
 
 
 [build-system]
