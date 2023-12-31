@@ -14,6 +14,7 @@ def scrape_search_page():
 
 def scrape_product_page():
     with ProductPageSpider(driver) as spider:
+        spider.query()
         spider.run()
 
 

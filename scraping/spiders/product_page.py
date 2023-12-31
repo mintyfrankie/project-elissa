@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from scraping.utils.common import is_antirobot
 from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
 
@@ -202,9 +203,15 @@ class ProductPageSpider(BaseSpider):
     A spider for scraping the product pages of the website.
     """
 
+    default_pipeline = [
+        {"$match": {"product_page_scraped": False}},
+        {"$project": {"asin": 1, "_id": 0}},
+    ]
+
     def __init__(self, driver: webdriver.Chrome) -> None:
         super().__init__(driver)
         self.queue = []
+        self.logs = []
 
     def parse(self, url: str) -> dict:
         """
@@ -213,9 +220,14 @@ class ProductPageSpider(BaseSpider):
 
         self.driver.get(url)
 
+        if is_antirobot(self.driver):
+            print("Anti-robot detected.")
+            self.logs.append({"url": self.driver.current_url, "status": "Anti-robot"})
+            return {}
+
         product = {
             "price": get_price(self.driver),
-            "title": get_title(self.driver),
+            # "title": get_title(self.driver),
             "brand": get_brand(self.driver),
             "avg_rating": get_avg_rating(self.driver),
             "num_reviews": get_num_reviews(self.driver),
@@ -226,14 +238,11 @@ class ProductPageSpider(BaseSpider):
 
         return product
 
-    def query(self) -> list[str]:
+    def query(self, pipeline: list[dict] = default_pipeline) -> list[str]:
         """
         Get the products to scrape.
         """
-        pipeline = [
-            {"$match": {"_metadata.product_page_scraped": False}},
-            {"$project": {"asin": 1, "_id": 0}},
-        ]
+
         items = list(self.mongodb.collection.aggregate(pipeline))
         items = [doc["asin"] for doc in items]
         self.queue = items
@@ -242,10 +251,12 @@ class ProductPageSpider(BaseSpider):
 
     def run(self) -> None:
         """
-        Run the spider.
+        Execute the spider.
         """
-
-        self.query()
+        try:
+            assert self.queue != []
+        except AssertionError:
+            print("No products to scrape, run query() first.")
 
         def process_item(asin: str) -> int:
             url = f"https://www.amazon.fr/dp/{asin}"
@@ -274,6 +285,8 @@ class ProductPageSpider(BaseSpider):
         self.meta["action_type"] = ACTION_TYPE
         self.meta["action_time"] = self.time
         self.meta["update_count"] = counter
+        self.meta["anomalies"] = self.logs
 
         print(f"Scraped {counter} products.")
         self.log()
+        self.driver.quit()
