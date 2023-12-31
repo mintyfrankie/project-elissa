@@ -20,7 +20,12 @@ def scrape_product_page():
 
 def scrape_review_page():
     with ReviewPageSpider(driver) as spider:
-        spider.run(max_page=10)
+        pipeline = [
+            {"$match": {}},
+            {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
+        ]
+        spider.query(pipeline)
+        spider.run(max_page=20)
 
 
 def save_collection():
@@ -30,6 +35,6 @@ def save_collection():
 
 if __name__ == "__main__":
     # scrape_search_page()
-    scrape_product_page()
-    # scrape_review_page()
+    # scrape_product_page()
+    scrape_review_page()
     # save_collection()
