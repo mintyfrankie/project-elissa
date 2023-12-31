@@ -257,6 +257,7 @@ class ProductPageSpider(BaseSpider):
             assert self.queue != []
         except AssertionError:
             print("No products to scrape, run query() first.")
+            return
 
         def process_item(asin: str) -> int:
             url = f"https://www.amazon.fr/dp/{asin}"

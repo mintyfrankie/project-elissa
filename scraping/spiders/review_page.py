@@ -2,6 +2,9 @@
 A spider for scraping the review pages of the website.
 """
 
+import random
+import re
+import time
 from types import SimpleNamespace
 from urllib.parse import urljoin
 
@@ -66,7 +69,7 @@ def get_metadata(review_card: WebElement) -> tuple[str, str] | None:
     if metadata:
         metadata = metadata[0].get_attribute("textContent")
         if metadata:
-            metadata = metadata.split("le", maxsplit=1)
+            metadata = re.split(r"\sle\s", metadata, maxsplit=1)
             if len(metadata) == 2:
                 country = metadata[0].replace("Commenté", "").strip()
                 date = metadata[1].strip()
@@ -107,19 +110,20 @@ class ReviewPageSpider(BaseSpider):
     A spider for scraping the review pages of the website.
     """
 
+    default_pipeline = [
+        {"$match": {"_metadata.review_page_scraped": False}},
+        {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
+    ]
+
     def __init__(self, driver: webdriver.Chrome) -> None:
         super().__init__(driver)
         self.queue = []
 
-    def query(self) -> list[dict]:
+    def query(self, pipeline: list[dict] = default_pipeline) -> list[dict]:
         """
         Get the products to scrape.
         """
 
-        pipeline = [
-            {"$match": {"_metadata.review_page_scraped": False}},
-            {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
-        ]
         items = list(self.mongodb.collection.aggregate(pipeline))
         self.queue = items
         print(f"Found {len(items)} products to scrape.")
@@ -148,6 +152,9 @@ class ReviewPageSpider(BaseSpider):
                     review["country"], review["date"] = metadata
                 reviews.append(review)
 
+        # Random sleep.
+        time.sleep(random.uniform(0.5, 1.5))
+
         return {"reviews": reviews, "next_page": next_page}
 
     def run(self, max_page: int = 10) -> None:
@@ -155,7 +162,11 @@ class ReviewPageSpider(BaseSpider):
         Run the spider.
         """
 
-        self.query()
+        try:
+            assert self.queue != []
+        except AssertionError:
+            print("No products to scrape, run query() first.")
+            return
 
         def process_item(product: dict) -> int:
             """Process the item."""
@@ -170,6 +181,7 @@ class ReviewPageSpider(BaseSpider):
                 reviews += output["reviews"]
                 review_url = output["next_page"]
                 page_count += 1
+                print(f"Scrapping {asin} --- Page {page_count}/{max_page}")
 
             metadata: ItemMetadata = {
                 "last_session_id": self.session_id,
@@ -192,7 +204,9 @@ class ReviewPageSpider(BaseSpider):
         for product in self.queue:
             asin = product["asin"]
             counter += process_item(product)
-            print(f"Updated {asin} --- Progress {counter}/{len(self.queue)}")
+            print(
+                f"Updated {asin} ------------------- Progress {counter}/{len(self.queue)}"
+            )
 
         # Log the session.
         ACTION_TYPE = "Review Page Scraping"
