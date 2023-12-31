@@ -10,7 +10,7 @@ def is_antirobot(driver: webdriver.Chrome) -> bool:
     TITLE_1 = "nos excuses"
     TITLE_2 = "amazon.fr"
     title = driver.title.lower()
-    if TITLE_1 in title or TITLE_2 in title:
+    if TITLE_1 in title or TITLE_2 == title:
         return True
     return False
 
