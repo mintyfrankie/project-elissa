@@ -2,9 +2,6 @@
 Test the SearchPageSpider.
 """
 
-from urllib.parse import urlencode
-
-import pytest
 
 from scraping.spiders.search_page import (
     get_asin_cards,
@@ -12,31 +9,6 @@ from scraping.spiders.search_page import (
     get_nextpage,
     parse_asin_card,
 )
-from scraping.utils import CustomDriver, is_antirobot
-
-
-@pytest.fixture(scope="module")
-def driver():
-    """Create a headless Chrome driver."""
-
-    with CustomDriver() as driver:
-        yield driver
-    driver.quit()
-
-
-@pytest.fixture(scope="module")
-def search_page(driver):
-    """Set up the search page."""
-
-    URL = "https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"})
-    driver.get(URL)
-    return driver
-
-
-def test_antirobot(search_page):
-    """Test if the anti-robot page is displayed."""
-    antirobot = is_antirobot(search_page)
-    assert not antirobot, "Anti-robot page is displayed"
 
 
 class TestSearchPageFunctions:

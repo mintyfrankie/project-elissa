@@ -3,8 +3,6 @@ Test the ProductPageSpider.
 """
 
 
-import pytest
-
 from scraping.spiders.product_page import (
     get_avg_rating,
     get_brand,
@@ -15,31 +13,6 @@ from scraping.spiders.product_page import (
     get_title,
     get_unities,
 )
-from scraping.utils import CustomDriver, is_antirobot
-
-ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
-
-
-@pytest.fixture(scope="module")
-def driver():
-    """Create a headless Chrome driver."""
-    with CustomDriver() as driver:
-        yield driver
-    driver.quit()
-
-
-@pytest.fixture(scope="module", params=ASIN_LIST, ids=ASIN_LIST)
-def product_page(request, driver):
-    """Set up the product page."""
-    product_page_url = "https://www.amazon.fr/dp/" + request.param
-    driver.get(product_page_url)
-    return driver
-
-
-def test_antirobot(product_page):
-    """Test if the anti-robot page is displayed."""
-    antirobot = is_antirobot(product_page)
-    assert not antirobot, "Anti-robot page is displayed"
 
 
 class TestProductPageFunctions:

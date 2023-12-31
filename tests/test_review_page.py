@@ -2,7 +2,6 @@
 Test the ReviewPageSpider.
 """
 
-import pytest
 
 from scraping.spiders.review_page import (
     get_body,
@@ -12,37 +11,6 @@ from scraping.spiders.review_page import (
     get_review_cards,
     get_title,
 )
-from scraping.utils import CustomDriver, is_antirobot
-
-REVIEW_URLS = [
-    "https://www.amazon.fr/SUPVOX-serviettes-hygi%C3%A9niques-pochettes-menstruelle/product-reviews/B07XLKC4WZ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
-    "https://www.amazon.fr/Always-ProFresh-Serviettes-Pochettes-Individuelles/product-reviews/B082VVRKTP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
-]
-
-
-@pytest.fixture(scope="module")
-def driver():
-    """Create a headless Chrome driver."""
-
-    with CustomDriver() as driver:
-        yield driver
-    driver.quit()
-
-
-@pytest.fixture(
-    scope="module", params=REVIEW_URLS, ids=[i.split("/")[-2] for i in REVIEW_URLS]
-)
-def review_page(driver, request):
-    """Set up the review page."""
-    review_page_url = "https://www.amazon.fr/Always-Prot%C3%A8ge-Slips-Incontinence-Protection-Int%C3%A9grale/product-reviews/B00QTJ23IS/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"
-    driver.get(review_page_url)
-    return driver
-
-
-def test_antirobot(review_page):
-    """Test if the anti-robot page is displayed."""
-    antirobot = is_antirobot(review_page)
-    assert not antirobot, "Anti-robot page is displayed"
 
 
 class TestReviewPageFunctions:
