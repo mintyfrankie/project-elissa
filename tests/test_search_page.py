@@ -8,18 +8,16 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from scraping.utils.common import is_antirobot
-
 from scraping.spiders.search_page import (
-    SearchPageSpider,
     get_asin_cards,
     get_mainframe,
     get_nextpage,
     parse_asin_card,
 )
+from scraping.utils.common import is_antirobot
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
 
@@ -30,7 +28,7 @@ def driver():
     driver.quit()
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def search_page(driver):
     """Set up the search page."""
 
@@ -39,13 +37,14 @@ def search_page(driver):
     return driver
 
 
-class TestSearchPageSpider:
-    """Test the SearchPageSpider."""
+def test_antirobot(search_page):
+    """Test if the anti-robot page is displayed."""
+    antirobot = is_antirobot(search_page)
+    assert not antirobot, "Anti-robot page is displayed"
 
-    def test_antirobot(self, search_page):
-        """Test if the anti-robot page is displayed."""
-        antirobot = is_antirobot(search_page)
-        assert not antirobot, "Anti-robot page is displayed"
+
+class TestSearchPageFunctions:
+    """Test the SearchPageSpider."""
 
     def test_get_mainframe(self, search_page):
         """Test if the main frame is found."""
@@ -87,15 +86,3 @@ class TestSearchPageSpider:
 
         next_page = get_nextpage(search_page)
         assert next_page, "Page is not turned"
-
-    @pytest.mark.skip(reason="Too costly to run")
-    def test_Spider(self, driver):
-        """Test the Spider."""
-
-        spider = SearchPageSpider(driver, keywords={"tampon femme"})
-        data = spider.run()
-        assert data, "Spider does not work"
-        assert spider.meta is not None, "Meta data is not found"
-
-        asins = [item["asin"] for item in data]
-        assert len(asins) == len(set(asins)), "Duplicates ASINs are found"

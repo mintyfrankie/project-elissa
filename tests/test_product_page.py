@@ -19,22 +19,22 @@ from scraping.spiders.product_page import (
 )
 from scraping.utils.common import is_antirobot
 
+ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 
-@pytest.fixture(scope="class")
+
+@pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
 
     options = Options()
     options.add_argument("--headless")
+    options.add_argument("--lang=fr")
     with webdriver.Chrome(options=options) as driver:
         yield driver
     driver.quit()
 
 
-ASIN_LIST = ["B082VVRKTP", "B07YV42X6F"]
-
-
-@pytest.fixture(scope="class", params=ASIN_LIST, ids=ASIN_LIST)
+@pytest.fixture(scope="module", params=ASIN_LIST, ids=ASIN_LIST)
 def product_page(request, driver):
     """Set up the product page."""
     product_page_url = "https://www.amazon.fr/dp/" + request.param
@@ -42,13 +42,14 @@ def product_page(request, driver):
     return driver
 
 
-class TestProductPageSpider:
-    """Test the ProductPageSpider."""
+def test_antirobot(product_page):
+    """Test if the anti-robot page is displayed."""
+    antirobot = is_antirobot(product_page)
+    assert not antirobot, "Anti-robot page is displayed"
 
-    def test_antirobot(self, product_page):
-        """Test if the anti-robot page is displayed."""
-        antirobot = is_antirobot(product_page)
-        assert not antirobot, "Anti-robot page is displayed"
+
+class TestProductPageFunctions:
+    """Test the ProductPageSpider parsing functions."""
 
     def test_get_price(self, product_page):
         """Test if the price is found."""

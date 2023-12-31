@@ -16,8 +16,13 @@ from scraping.spiders.review_page import (
 )
 from scraping.utils.common import is_antirobot
 
+REVIEW_URLS = [
+    "https://www.amazon.fr/SUPVOX-serviettes-hygi%C3%A9niques-pochettes-menstruelle/product-reviews/B07XLKC4WZ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
+    "https://www.amazon.fr/Always-ProFresh-Serviettes-Pochettes-Individuelles/product-reviews/B082VVRKTP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
+]
 
-@pytest.fixture(scope="class")
+
+@pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
 
@@ -28,14 +33,8 @@ def driver():
     driver.quit()
 
 
-REVIEW_URLS = [
-    "https://www.amazon.fr/SUPVOX-serviettes-hygi%C3%A9niques-pochettes-menstruelle/product-reviews/B07XLKC4WZ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
-    "https://www.amazon.fr/Always-ProFresh-Serviettes-Pochettes-Individuelles/product-reviews/B082VVRKTP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
-]
-
-
 @pytest.fixture(
-    scope="class", params=REVIEW_URLS, ids=[i.split("/")[-2] for i in REVIEW_URLS]
+    scope="module", params=REVIEW_URLS, ids=[i.split("/")[-2] for i in REVIEW_URLS]
 )
 def review_page(driver, request):
     """Set up the review page."""
@@ -44,13 +43,14 @@ def review_page(driver, request):
     return driver
 
 
-class TestReviewPageSpider:
-    """Test the ReviewPageSpider."""
+def test_antirobot(review_page):
+    """Test if the anti-robot page is displayed."""
+    antirobot = is_antirobot(review_page)
+    assert not antirobot, "Anti-robot page is displayed"
 
-    def test_antirobot(self, review_page):
-        """Test if the anti-robot page is displayed."""
-        antirobot = is_antirobot(review_page)
-        assert not antirobot, "Anti-robot page is displayed"
+
+class TestReviewPageFunctions:
+    """Test the ReviewPageSpider."""
 
     def test_get_review_cards(self, review_page):
         """Test if the review cards are found."""
