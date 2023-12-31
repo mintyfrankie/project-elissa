@@ -94,6 +94,7 @@ class SearchPageSpider(BaseSpider):
         self.asins = set()
         self.meta = {}
         self.data = []
+        self.logs = []
 
         print("SearchPageSpider is initialized.")
 
@@ -105,6 +106,7 @@ class SearchPageSpider(BaseSpider):
 
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
+            self.logs.append({"url": self.driver.current_url, "status": "Anti-robot"})
             return {}
 
         items = []
@@ -173,6 +175,7 @@ class SearchPageSpider(BaseSpider):
         self.meta["action_time"] = self.time
         self.meta["update_count"] = counter
         self.meta["query_keywords"] = list(self.keywords)
+        self.meta["anomalies"] = self.logs
 
         print(f"Scraped {item_count} items in total, {counter} items are new.")
         self.log()

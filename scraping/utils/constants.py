@@ -22,8 +22,13 @@ EXCLUDE_KEYWORDS = {
     "décoration",
     "percer",
     "manucure",
+    "pédicure",
     "trouse",
     "stérilisateur",
+    "cuisine",
+    "éponge",
+    "épilation",
+    "épilateur",
 }
 
 TEST_SCRAPPING_ITEM_LIMIT = 50
