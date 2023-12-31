@@ -46,3 +46,4 @@ The project uses `pytest` as the testing framework. The `tests` module contains 
 
 - [ ] Setup devcontainer with selenium and chrome
 - [ ] Find ways to exclude irrelevant products in the database
+- [ ] For reviews, it lacks the rating and title for reviews outside of France. Need to find a way to get them.
