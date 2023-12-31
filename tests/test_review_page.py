@@ -3,8 +3,6 @@ Test the ReviewPageSpider.
 """
 
 import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
 from scraping.spiders.review_page import (
     get_body,
@@ -14,7 +12,7 @@ from scraping.spiders.review_page import (
     get_review_cards,
     get_title,
 )
-from scraping.utils.common import is_antirobot
+from scraping.utils import CustomDriver, is_antirobot
 
 REVIEW_URLS = [
     "https://www.amazon.fr/SUPVOX-serviettes-hygi%C3%A9niques-pochettes-menstruelle/product-reviews/B07XLKC4WZ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
@@ -26,9 +24,7 @@ REVIEW_URLS = [
 def driver():
     """Create a headless Chrome driver."""
 
-    options = Options()
-    options.add_argument("--headless")
-    with webdriver.Chrome(options=options) as driver:
+    with CustomDriver() as driver:
         yield driver
     driver.quit()
 

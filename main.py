@@ -1,15 +1,10 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-
 from mongodb.client import DatabaseClient
 from scraping.spiders.product_page import ProductPageSpider
 from scraping.spiders.review_page import ReviewPageSpider
 from scraping.spiders.search_page import SearchPageSpider
-from scraping.utils.constants import QUERY_KEYWORDS
+from scraping.utils import QUERY_KEYWORDS, CustomDriver
 
-options = Options()
-options.add_argument("--headless")
-driver = webdriver.Chrome(options=options)
+driver = CustomDriver()
 
 
 def scrape_search_page():
@@ -34,6 +29,6 @@ def save_collection():
 
 if __name__ == "__main__":
     # scrape_search_page()
-    # scrape_product_page()
+    scrape_product_page()
     # scrape_review_page()
-    save_collection()
+    # save_collection()

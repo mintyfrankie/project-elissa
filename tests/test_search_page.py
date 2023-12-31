@@ -5,8 +5,6 @@ Test the SearchPageSpider.
 from urllib.parse import urlencode
 
 import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
 from scraping.spiders.search_page import (
     get_asin_cards,
@@ -14,16 +12,14 @@ from scraping.spiders.search_page import (
     get_nextpage,
     parse_asin_card,
 )
-from scraping.utils.common import is_antirobot
+from scraping.utils import CustomDriver, is_antirobot
 
 
 @pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
 
-    options = Options()
-    options.add_argument("--headless")
-    with webdriver.Chrome(options=options) as driver:
+    with CustomDriver() as driver:
         yield driver
     driver.quit()
 

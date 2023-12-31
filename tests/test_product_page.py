@@ -4,8 +4,6 @@ Test the ProductPageSpider.
 
 
 import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
 from scraping.spiders.product_page import (
     get_avg_rating,
@@ -17,7 +15,7 @@ from scraping.spiders.product_page import (
     get_title,
     get_unities,
 )
-from scraping.utils.common import is_antirobot
+from scraping.utils import CustomDriver, is_antirobot
 
 ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 
@@ -25,11 +23,7 @@ ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 @pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
-
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--lang=fr")
-    with webdriver.Chrome(options=options) as driver:
+    with CustomDriver() as driver:
         yield driver
     driver.quit()
 
