@@ -1,6 +1,10 @@
-# Project Elissa
+![CleanShot 2024-01-01 at 09 49 31](https://github.com/mintyfrankie/project-elissa/assets/77310871/b0a7f22d-da23-4b3b-84e2-419fc4b2d1ec)
+
+<h1 align='center'> Project Elissa - Albert School </h1>
 
 ## Introduction
+
+This project is for the course Hands-on Data for Startup Cases. It intends to build a recommendation system for feminine hygienic products based on their reviews, price, quality as well as users' preference. 
 
 ## Repository Structure
 
@@ -10,6 +14,10 @@
 ├── mongodb/        # a Client for connecting to mongodb
 ├── scraping/       # three Spiders for scraping data from websites
 ├── tests/          # pytest module for testing
+├── scripts/        # some handy scripts for DevOps
+├── deepnote/       # related jupyter notebooks hosted on Deepnote
+├── dashboard/
+├── api/
 ```
 
 ## Modules
