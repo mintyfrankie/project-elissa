@@ -12,6 +12,7 @@ from scraping.utils.common import is_antirobot
 from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
 
+
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
     price_2="//div[@data-feature-name='corePriceDisplay_desktop']//span[contains(@class, 'aok-offscreen')]",

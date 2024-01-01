@@ -21,7 +21,7 @@ def export_products():
     project = {key: 1 for key in ProductItem.__annotations__}
     project["_id"] = 0
 
-    EXCLUDED_KEYS = ["_metadata", "review_url", "features_bullets", "thumbnail"]
+    EXCLUDED_KEYS = ["_metadata", "review_url"]
     for key in EXCLUDED_KEYS:
         project.pop(key)
 
