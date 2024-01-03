@@ -1,8 +1,7 @@
-from urllib.parse import urlencode
-
 import pytest
-
+from urllib.parse import urlencode
 from scraping.utils import CustomDriver
+from mongodb.client import DatabaseClient
 
 PRODUCT_ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 REVIEW_URLS = [
@@ -44,3 +43,21 @@ def search_page(driver):
     URL = "https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"})
     driver.get(URL)
     return driver
+
+
+@pytest.fixture(scope="module")
+def db_client():
+    """Create a MongoDB client."""
+
+    return DatabaseClient()
+
+
+@pytest.fixture(scope="module")
+def product():
+    """Create a product."""
+
+    return {
+        "asin": "B07YQFH15Y",
+        "title": "Nana Maxi Goodnight Serviettes Hygiéniques pour la Nuit, 12 Serviettes",
+        "image": "https://m.media-amazon.com/images/I/81mY2rB96VL._AC_UL320_.jpg",
+    }

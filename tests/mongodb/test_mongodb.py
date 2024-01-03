@@ -1,28 +1,14 @@
 """
 For testing the MongoDB pipeline.
 """
-
-import pytest
-
-from mongodb.client import DatabaseClient
+from mongodb.client import load_env_uri
 
 
-@pytest.fixture(scope="class")
-def db_client():
-    """Create a MongoDB client."""
+def test_load_env_uri():
+    """Test if the default MongoDB URI is loaded."""
 
-    return DatabaseClient()
-
-
-@pytest.fixture(scope="class")
-def product():
-    """Create a product."""
-
-    return {
-        "asin": "B07YQFH15Y",
-        "title": "Nana Maxi Goodnight Serviettes Hygiéniques pour la Nuit, 12 Serviettes",
-        "image": "https://m.media-amazon.com/images/I/81mY2rB96VL._AC_UL320_.jpg",
-    }
+    uri = load_env_uri()
+    assert uri, "Default MongoDB URI is not loaded from .env file"
 
 
 class TestDatabaseClient:

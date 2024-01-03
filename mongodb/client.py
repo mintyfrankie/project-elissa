@@ -7,57 +7,116 @@ from bson import json_util
 import pandas as pd
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from mongodb.items import DatabaseCounter
 
 from scraping.utils.items import SearchItem, SessionLog, SessionLogInfo, ProductItem
 
 
-class DatabaseClient:
-    """A class to upload data to MongoDB."""
+def load_env_uri() -> str:
+    """
+    Retrieves the default MongoDB URI from the .env file.
 
+    Returns:
+        str: The default MongoDB URI.
+
+    Raises:
+        KeyError: If the MONGODB_URI is not set in the .env file.
+    """
+
+    from dotenv import dotenv_values
+
+    try:
+        config = dotenv_values(".env")
+        return config["MONGODB_URI"]
+    except KeyError:
+        ERROR_MESSAGE = "Please set MONGODB_URI in .env file"
+        raise KeyError(ERROR_MESSAGE)
+
+
+class DatabaseClient:
     DB_NAME = "amazon"
     ITEM_COLLECTION_NAME = "items"
     LOG_COLLECTION_NAME = "session_logs"
     COUNTER_COLLECTION_NAME = "log_counters"
 
-    def __init__(self) -> None:
-        from dotenv import dotenv_values
+    def __init__(self, uri: str | None = None) -> None:
+        """
+        Initialize a MongoDB client.
 
-        try:
-            config = dotenv_values(".env")
-            self.URI = config["MONGODB_URI"]
-        except Exception:
-            ERROR_MESSAGE = "Failed to load MONGODB_URI from file `.env`. Make sure you have created the file and set the variable."
-            raise ValueError(ERROR_MESSAGE)
+        Args:
+            uri (str | None): The MongoDB connection URI. If None, the default URI will be used.
+
+        Returns:
+            None
+        """
+        if uri is None:
+            uri = load_env_uri()
 
         self.client = MongoClient(
-            self.URI,
+            uri,
             server_api=ServerApi(version="1"),
         )
         self.db = self.client[self.DB_NAME]
         self.collection = self.db[self.ITEM_COLLECTION_NAME]
         self.log_collection = self.db[self.LOG_COLLECTION_NAME]
         self.counter_collection = self.db[self.COUNTER_COLLECTION_NAME]
-        self.session_id = self.get_sessionid()
+        self.session_id = self.get_counter()
+        self.logged = False
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.client.close()
+        if not self.logged:
+            self.log({"action_type": "Session Closed"})
+        self.close()
 
     def close(self):
-        """Close the connection."""
+        """
+        Closes the MongoDB client connection.
+        """
         self.client.close()
 
     def check_connection(self) -> bool:
-        """Check if the connection is established."""
+        """Check if the connection is established.
 
+        Returns:
+            bool: True if the connection is established, False otherwise.
+        """
         try:
             self.client.admin.command("ping")
             return True
         except Exception:
             return False
 
+    def get_counter(self) -> int:
+        """
+        Retrieves the current counter value from the database; if the counter does not exist, it is created and set to 0.
+
+        Returns:
+            int: The current counter value.
+        """
+        doc = self.counter_collection.find_one(DatabaseCounter().get_id())
+        if doc is None:
+            INITIAL_COUNT = 0
+            document = DatabaseCounter(count=INITIAL_COUNT)
+            self.counter_collection.insert_one(document.__dict__)
+            return INITIAL_COUNT
+        else:
+            return doc["count"]
+
+    def increment_counter(self) -> None:
+        """
+        Increments the counter value by 1.
+        """
+        document = DatabaseCounter()
+        self.counter_collection.update_one(
+            document.get_id(), document.increment_count()
+        )
+        current_counter = self.get_counter()
+        return current_counter
+
+    # !: To be deprecated
     def get_sessionid(self) -> int:
         """Update the log counter, and return the current count."""
 
@@ -72,9 +131,18 @@ class DatabaseClient:
         return counter["seq"]
 
     def log(self, info: SessionLogInfo | dict) -> SessionLog:
-        """Create a log entry, and return the log id."""
+        """
+        Logs the session information.
 
-        id = self.session_id
+        Args:
+            info (SessionLogInfo | dict): The session log information.
+
+        Returns:
+            SessionLog: The logged session information.
+        """
+
+        self.increment_counter()
+        id = self.get_counter()
         content = SessionLog(
             id=id,
             time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -84,18 +152,39 @@ class DatabaseClient:
         return content
 
     def check_product(self, asin: str) -> bool:
-        """Check if a product is in the database."""
+        """
+        Check if a product with the given ASIN exists in the collection.
 
+        Args:
+            asin (str): The ASIN (Amazon Standard Identification Number) of the product.
+
+        Returns:
+            bool: True if a product with the given ASIN exists in the collection, False otherwise.
+        """
         return self.collection.count_documents({"asin": asin}) > 0
 
     def find_product(self, asin: str) -> dict | None:
-        """Find a product in the database."""
+        """
+        Find a product in the collection based on the given ASIN.
 
+        Args:
+            asin (str): The ASIN of the product to find.
+
+        Returns:
+            dict | None: A dictionary representing the found product, or None if not found.
+        """
         return self.collection.find_one({"asin": asin})
 
     def update_product(self, product: SearchItem) -> bool:
-        """Update a product in the database."""
+        """
+        Updates a product in the collection.
 
+        Args:
+            product (SearchItem): The product to be updated.
+
+        Returns:
+            bool: True if the update was successful, False otherwise.
+        """
         result = self.collection.update_one(
             {"asin": product["asin"]},
             {"$set": product},
