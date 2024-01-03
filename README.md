@@ -4,7 +4,9 @@
 
 ## Introduction
 
-This project is for the course Hands-on Data for Startup Cases. It intends to build a recommendation system for feminine hygienic products based on their reviews, price, quality as well as users' preference. 
+The repository is a monorepo for the Project Elissa. It intends to build a recommendation interface for feminine hygienic products based on their price, quality, customer reviews as well as users' preference.
+
+**The project is for educational purposes only and is not to be used commercially. The creators accept no liability for any misuse or damages. Use at your own risk.**
 
 ## Repository Structure
 
@@ -36,15 +38,15 @@ The project adopts MongoDB as the database for storing data. The `DatabaseClient
 
 ### 3. Data Modelling
 
-> NotImplemented
+> Not Implemented
 
 ### 4. Data Visualization
 
-> NotImplemented
+> Not Implemented
 
 ### 5. Dashboarding and APIs
 
-> NotImplemented
+> Not Implemented
 
 ### \*. Testing
 
