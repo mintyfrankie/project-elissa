@@ -1,5 +1,6 @@
 """Some common functions for Selenium spiders."""
 
+from typing import Literal
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -19,6 +20,41 @@ def is_filtered(title: str, filter: set[str]) -> bool:
     """Check if the title contains any of the filter words."""
 
     return any(word.lower() in title.lower() for word in filter)
+
+
+type SeleniumDriver = (
+    webdriver.Chrome | webdriver.Firefox | webdriver.Edge | webdriver.Safari
+)
+BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari"]
+
+
+def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
+    """Get a Selenium driver."""
+
+    match driver_type:
+        case "Chrome":
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--lang=fr")
+            driver = webdriver.Chrome(options=options)
+        case "Firefox":
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--lang=fr")
+            driver = webdriver.Firefox(options=options)
+        case "Edge":
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--lang=fr")
+            driver = webdriver.Edge(options=options)
+        case "Safari":
+            options = Options()
+            options.add_argument("--headless")
+            options.add_argument("--lang=fr")
+            driver = webdriver.Safari(options=options)
+        case _:
+            raise ValueError("Invalid driver type.")
+    return driver
 
 
 def CustomDriver() -> webdriver.Chrome:

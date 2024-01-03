@@ -5,13 +5,13 @@ Base class for all spiders
 from datetime import datetime
 from time import time
 
-from selenium import webdriver
+from .common import SeleniumDriver
 
 
 class BaseSpider:
     """A base spider class."""
 
-    def __init__(self, driver: webdriver.Chrome) -> None:
+    def __init__(self, driver: SeleniumDriver, action_type: str) -> None:
         from mongodb.client import DatabaseClient
 
         self.driver = driver
@@ -19,7 +19,7 @@ class BaseSpider:
         self.strtime = datetime.fromtimestamp(self.time).strftime("%Y-%m-%d %H:%M:%S")
         self.meta = {}
 
-        self.mongodb = DatabaseClient()
+        self.mongodb = DatabaseClient(action_type=action_type)
         self.session_id = self.mongodb.session_id
         if not self.mongdb.check_connection():
             raise ConnectionError("Database connection failed.")
