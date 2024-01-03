@@ -162,11 +162,8 @@ class ReviewPageSpider(BaseSpider):
         Run the spider.
         """
 
-        try:
-            assert self.queue != []
-        except AssertionError:
-            print("No products to scrape, run query() first.")
-            return
+        if not self.queue:
+            raise ValueError("No products to scrape, run query() first.")
 
         def process_item(product: dict) -> int:
             """Process the item."""

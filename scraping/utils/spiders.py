@@ -21,7 +21,8 @@ class BaseSpider:
 
         self.mongodb = DatabaseClient()
         self.session_id = self.mongodb.session_id
-        assert self.mongodb.check_connection(), "Connection is not established."
+        if not self.mongdb.check_connection():
+            raise ConnectionError("Database connection failed.")
         print("DatabaseClient initialized with successful connection to MongoDB.")
 
     def __enter__(self):
@@ -47,7 +48,9 @@ class BaseSpider:
     def log(self) -> dict:
         """Log the session activities to the database."""
 
-        assert self.meta != {}, "No session activities to log."
+        if not self.meta:
+            raise ValueError("No session activities to log.")
+
         self.mongodb.log(self.meta)
         print("Session activities are logged.")
         return self.meta

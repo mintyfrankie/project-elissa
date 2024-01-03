@@ -16,7 +16,8 @@ def export_products():
     """Export the products data."""
 
     db = DatabaseClient()
-    assert db.check_connection(), "Database connection failed."
+    if not db.check_connection():
+        raise ConnectionError("Database connection failed.")
 
     project = {key: 1 for key in ProductItem.__annotations__}
     project["_id"] = 0
@@ -43,7 +44,8 @@ def export_reviews():
     """Export the reviews data."""
 
     db = DatabaseClient()
-    assert db.check_connection(), "Database connection failed."
+    if not db.check_connection():
+        raise ConnectionError("Database connection failed.")
 
     project = {"_id": 0, "reviews": 1, "asin": 1}
 

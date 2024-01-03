@@ -66,7 +66,8 @@ class DatabaseClient:
         )
 
         counter = self.counter_collection.find_one({"_id": "logid"})
-        assert counter is not None, "Counter is None, check the collection."
+        if counter is None:
+            raise ValueError("Counter is None, check the collection.")
         return counter["seq"]
 
     def log(self, info: SessionLogInfo | dict) -> SessionLog:
