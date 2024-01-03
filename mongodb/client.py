@@ -4,10 +4,11 @@
 import datetime
 
 from bson import json_util
+import pandas as pd
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from scraping.utils.items import SearchItem, SessionLog, SessionLogInfo
+from scraping.utils.items import SearchItem, SessionLog, SessionLogInfo, ProductItem
 
 
 class DatabaseClient:
@@ -104,17 +105,50 @@ class DatabaseClient:
         return result.acknowledged
 
     def snapshot(self, download_path: str | None = None) -> list[dict]:
-        """Download a snapshot of the collection and return the result."""
+        """
+        Takes a snapshot of the collection and returns a list of documents.
 
-        cursor = self.collection.find({})
+        Args:
+            download_path (str | None): Optional. The path to save the snapshot as a JSON file.
+
+        Returns:
+            list[dict]: A list of documents in the collection.
+        """
+        items = list(self.collection.find({}))
         if download_path is not None:
             with open(download_path, "w", encoding="utf-8") as f:
-                f.write(json_util.dumps(list(cursor)))
+                f.write(json_util.dumps(items))
             print(f"Snapshot is saved to {download_path}.")
-        return list(cursor)
+        return items
 
+    def export_products(self) -> pd.DataFrame:
+        project = {key: 1 for key in ProductItem.__annotations__}
+        project["_id"] = 0
 
-if __name__ == "__main__":
-    uploader = DatabaseClient()
-    uploader.client.admin.command("ping")
-    print("Connection is established.")
+        EXCLUDED_KEYS = ["_metadata", "review_url"]
+        for key in EXCLUDED_KEYS:
+            project.pop(key)
+
+        products = list(self.collection.find({}, project))
+        products = pd.DataFrame(products)
+        print(f"Queried {len(products)} products.")
+
+        return products
+
+    def export_reviews(self) -> pd.DataFrame:
+        project = {"_id": 0, "reviews": 1, "asin": 1}
+        items = list(self.collection.find({}, project))
+
+        def rowify_reviews(item):
+            reviews = item["reviews"]
+            asin = item["asin"]
+            for review in reviews:
+                review["asin"] = asin
+                yield review
+
+        items = [review for item in items for review in rowify_reviews(item)]
+        reviews = pd.DataFrame(items)
+        reviews = reviews[["asin"] + [col for col in reviews.columns if col != "asin"]]
+        print(f"Queried {len(reviews)} reviews.")
+
+        return reviews
