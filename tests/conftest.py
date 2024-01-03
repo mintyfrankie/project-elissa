@@ -49,7 +49,7 @@ def search_page(driver):
 def db_client():
     """Create a MongoDB client."""
 
-    return DatabaseClient()
+    return DatabaseClient(action_type="Test")
 
 
 @pytest.fixture(scope="module")

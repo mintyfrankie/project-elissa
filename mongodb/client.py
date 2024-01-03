@@ -39,7 +39,11 @@ class DatabaseClient:
     LOG_COLLECTION_NAME = "session_logs"
     COUNTER_COLLECTION_NAME = "log_counters"
 
-    def __init__(self, uri: str | None = None) -> None:
+    def __init__(
+        self,
+        uri: str | None = None,
+        action_type: str | None = "DatabaseClient: Default Action",
+    ) -> None:
         """
         Initialize a MongoDB client.
 
@@ -62,13 +66,14 @@ class DatabaseClient:
         self.counter_collection = self.db[self.COUNTER_COLLECTION_NAME]
         self.session_id = self.get_counter()
         self.logged = False
+        self.action_type = action_type
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.logged:
-            self.log({"action_type": "Session Closed"})
+            self.log({"message": "Session ended without inserting info."})
         self.close()
 
     def close(self):
@@ -146,6 +151,7 @@ class DatabaseClient:
         content = SessionLog(
             id=id,
             time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            action_type=self.action_type,
             info=info,
         )
         self.log_collection.insert_one(content)

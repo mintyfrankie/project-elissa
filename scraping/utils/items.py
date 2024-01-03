@@ -68,4 +68,5 @@ class SessionLog(TypedDict):
 
     id: int
     time: str
+    action_type: str
     info: SessionLogInfo | dict
