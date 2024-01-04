@@ -39,7 +39,7 @@ class BaseItemScraper(ABC):
         raise NotImplementedError
 
 
-class BaseSpider(ABC):
+class BaseSpiderWorker(ABC):
     """Base class for functional spiders.
 
     A Spider is a worker for processing a group of item-objects according to a specific action.
@@ -57,9 +57,18 @@ class BaseSpider(ABC):
         from mongodb.client import DatabaseClient
 
         self.driver = driver
-        self.__queue = queue
-        self.__piepline = pipeline
-        self.__meta = {}
+        self.db = DatabaseClient(action_type=action_type)
+        self._meta = {}
+        self._logged = False
+
+        if queue is None and pipeline is None:
+            raise ValueError("Either queue or pipeline must be provided.")
+        elif queue is not None and pipeline is not None:
+            raise ValueError("Only one of queue and pipeline can be provided.")
+        elif queue is not None:
+            self._query = queue
+        elif pipeline is not None:
+            self._pipeline = pipeline
 
         self.mongodb = DatabaseClient(action_type=action_type)
         self.session_id = self.mongodb.session_id
@@ -79,4 +88,9 @@ class BaseSpider(ABC):
     @abstractmethod
     def run(self) -> None:
         """Run the spider."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def log(self) -> None:
+        """Log the data."""
         raise NotImplementedError

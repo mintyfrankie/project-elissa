@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
-from scraping.utils.base import BaseItemScraper
+from scraping.utils.base import BaseItemScraper, BaseSpiderWorker
 from scraping.utils.common import SeleniumDriver, is_antirobot
 from scraping.utils.items import ItemMetadata, SearchItem
 from scraping.utils.spiders import BaseSpider
@@ -145,17 +145,74 @@ class SearchItemScraper(BaseItemScraper):
             page_count += 1
 
     def validate(self) -> bool:
+        """
+        Validates the data.
+
+        Returns:
+            bool: True if the data is valid, False otherwise.
+        """
         return True
 
     @property
     def asins(self) -> set[str]:
+        """
+        Returns a set of ASINs.
+
+        Returns:
+            set[str]: A set of ASINs.
+        """
         return self._asins
 
     def dump(self) -> list[dict]:
+        """
+        Returns the data stored in the object as a list of dictionaries.
+
+        Returns:
+            list[dict]: The data stored in the object.
+        """
         return self._data
 
 
-class SearchPageSpider(BaseSpider):
+# ? : How to handle the queue? The idea to to query the database first
+# ? : and then scrape the search pages for the new ASINs.
+class SearchPageSpiderWorker(BaseSpiderWorker):
+    def __init__(
+        self,
+        driver: SeleniumDriver,
+        action_type: str = "Search Page Scraping",
+        queue: list[str] | None = None,
+    ) -> None:
+        super().__init__(driver, action_type, queue, None)
+        self.asins = set()
+
+    def run(self) -> None:
+        for keyword in self._query:
+            url = "https://www.amazon.fr/s?" + urlencode({"k": keyword})
+            scraper = SearchItemScraper(
+                driver=self.driver,
+                starting_url=url,
+            )
+            scraper.run()
+            scaper_asins = scraper.asins
+            data = scraper.dump()
+            # filter only asins that are not in the asin set
+            scaper_asins = [asin for asin in scaper_asins if asin not in self.asins]
+            self.asins.update(scaper_asins)
+            # filter the data to only include the asins that are not in the asin set
+            data = [item for item in data if item["asin"] in scaper_asins]
+            self._data.extend(data)
+            # update the database
+            for item in data:
+                self.db.update_product(item)
+            # log the meta data
+            self._meta["action_time"] = self.time
+            self._meta["update_count"] = len(data)
+            self._meta["query_keywords"] = list(self._query)
+            self.db.log(self._meta)
+
+
+# !: Deprecated
+class OldSearchPageSpider(BaseSpider):
     """A spider for scraping the search pages of the website."""
 
     def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
