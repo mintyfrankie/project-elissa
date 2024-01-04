@@ -11,7 +11,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
-from scraping.utils.common import is_antirobot
+from scraping.utils.base import BaseItemScraper
+from scraping.utils.common import SeleniumDriver, is_antirobot
 from scraping.utils.items import ItemMetadata, SearchItem
 from scraping.utils.spiders import BaseSpider
 
@@ -78,6 +79,80 @@ def get_nextpage(driver: webdriver.Chrome) -> str | None:
         return url
     except NoSuchElementException:
         return None
+
+
+class SearchItemScraper(BaseItemScraper):
+    """A scraper for scraping a set of search pages for a specific keyword."""
+
+    def __init__(
+        self, driver: SeleniumDriver, starting_url: str, max_page: int = -1
+    ) -> None:
+        super().__init__(driver, starting_url)
+        self._asins = set()
+        self._max_page = max_page
+
+    def parse(self) -> dict:
+        """
+        Parses a search page and extracts relevant information.
+
+        Returns:
+            dict: A dictionary containing the next page URL and a list of items.
+        """
+
+        self.driver.get(self._starting_url)
+        print(f"Current URL: {self.driver.current_url}")
+
+        if is_antirobot(self.driver):
+            print("Anti-robot check is triggered.")
+            return {}
+
+        items = []
+        main_frame = get_mainframe(self.driver)
+        if main_frame == [] or main_frame is None:
+            return {}
+
+        asin_cards = get_asin_cards(main_frame)
+        for asin_card in asin_cards:
+            item = parse_asin_card(asin_card)
+            if item["asin"] != "" and item["asin"] not in self._asins:
+                if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
+                    print(f"{item['asin']} is filtered.")
+                    continue
+                self._asins.add(item["asin"])
+                items.append(item)
+
+        print(f"Scraped {len(items)} items.")
+        next_page = get_nextpage(self.driver)
+
+        return {"next_page": next_page, "items": items}
+
+    def run(self) -> None:
+        """
+        Executes the spider and collects data from the starting URL and subsequent pages.
+
+        Returns:
+            None
+        """
+        url = self._starting_url
+        page_count = 0
+        while url:
+            if self._max_page != -1 and page_count >= self._max_page:
+                break
+            output = self.parse()
+            items = output["items"]
+            self._data.extend(items)
+            url = output.get("next_page")
+            page_count += 1
+
+    def validate(self) -> bool:
+        return True
+
+    @property
+    def asins(self) -> set[str]:
+        return self._asins
+
+    def dump(self) -> list[dict]:
+        return self._data
 
 
 class SearchPageSpider(BaseSpider):

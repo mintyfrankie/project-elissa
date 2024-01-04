@@ -4,8 +4,6 @@ Base class for all spiders
 
 from datetime import datetime
 from time import time
-
-
 from .common import SeleniumDriver
 
 

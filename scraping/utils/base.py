@@ -15,8 +15,8 @@ class BaseItemScraper(ABC):
 
     def __init__(self, driver: SeleniumDriver, starting_url: str) -> None:
         self.driver = driver
-        self.__starting_url = starting_url
-        self.__data = []
+        self._starting_url = starting_url
+        self._data = []
 
     @abstractmethod
     def parse(self) -> dict:
@@ -26,6 +26,11 @@ class BaseItemScraper(ABC):
     @abstractmethod
     def run(self) -> None:
         """Run the scraper that can iterate over multiple pages."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def validate(self) -> bool:
+        """Validate the data."""
         raise NotImplementedError
 
     @abstractmethod
@@ -70,12 +75,6 @@ class BaseSpider(ABC):
         print("DatabaseClient closed.")
         self.driver.quit()
         print("SeleniumDriver closed.")
-
-    # TODO: metaprogramming - check how to interact with the BaseItemScraper
-    @abstractmethod
-    def process(self, item: str) -> None:
-        """Process a single item."""
-        raise NotImplementedError
 
     @abstractmethod
     def run(self) -> None:

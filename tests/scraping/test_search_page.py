@@ -3,11 +3,13 @@ Test the SearchPageSpider.
 """
 
 
+from urllib.parse import urlencode
 from scraping.spiders.search_page import (
     get_asin_cards,
     get_mainframe,
     get_nextpage,
     parse_asin_card,
+    SearchItemScraper,
 )
 
 
@@ -54,3 +56,16 @@ class TestSearchPageFunctions:
 
         next_page = get_nextpage(search_page)
         assert next_page, "Page is not turned"
+
+
+def test_SearchItemScraper(search_page):
+    """Test the SearchItemScraper."""
+    scraper = SearchItemScraper(
+        driver=search_page,
+        starting_url="https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"}),
+        max_page=1,
+    )
+    scraper.run()
+    data = scraper.dump()
+    assert len(data) > 0, "No data is scraped"
+    assert scraper.validate(), "Data is not validated"
