@@ -11,8 +11,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot
-from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
+from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
+from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -176,8 +176,30 @@ class SearchItemScraper(BaseItemScraper):
         return self._data
 
 
-# TODO: setup tests for this class
 class SearchPageSpiderWorker(BaseSpiderWorker):
+    """
+    Spider worker class for performing search and scraping on search pages given a queue of keywords.
+
+    It will not modify any existing documents in the database. It will only add new documents.
+
+    This class inherits from the BaseSpiderWorker class and provides methods to execute the search and scraping process
+    for a given query. It retrieves existing ASINs from the database, updates the internal ASIN set, constructs the search
+    URL for each keyword, runs a scraper to extract ASINs and data, filters out duplicate ASINs, filters the data to include
+    only the ASINs not already in the internal ASIN set, updates the database with the scraped product information, and
+    prints the total number of items updated.
+
+    Attributes:
+        driver (SeleniumDriver): The Selenium driver instance.
+        action_type (str): The type of action being performed.
+        queue (list[str] | None): The queue of ASINs to process.
+        __kwargs: Additional keyword arguments.
+
+    Methods:
+        run(): Executes the search and scraping process for the given query.
+        log(): Logs the meta data.
+
+    """
+
     def __init__(
         self,
         driver: SeleniumDriver,
@@ -231,6 +253,14 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
             self._data.extend(data)
             # update the database
             for item in data:
+                # add metadata
+                metadata = ItemMetadata(
+                    last_session_id=self.session_id,
+                    last_session_time=self._init_time,
+                    scrap_status="SearchPage",
+                )
+                item["_metadata"] = dict(metadata)
+
                 self.db.update_product(item)
 
         print(f"Updated {len(self._data)} items in total.")

@@ -3,6 +3,7 @@ Base class for all spiders
 """
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from .common import SeleniumDriver
 
@@ -62,6 +63,7 @@ class BaseSpiderWorker(ABC):
         self._data = []
         self._meta = {}
         self._logged = False
+        self._init_time = datetime.now()
 
         if queue is None and pipeline is None:
             raise ValueError("Either queue or pipeline must be provided.")

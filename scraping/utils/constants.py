@@ -1,6 +1,8 @@
 """
 This file contains constants used in the project.
+! : to be removed in future iterations
 """
+
 
 QUERY_KEYWORDS = {
     "serviette femme",

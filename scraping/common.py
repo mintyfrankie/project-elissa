@@ -1,8 +1,38 @@
 """Some common functions for Selenium spiders."""
 
 from typing import Literal
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+QUERY_KEYWORDS = {
+    "serviette femme",
+    "tampon femme",
+    "cup menstruelle",
+    "protege slip",
+    # "culotte menstruelle",
+}
+
+EXCLUDE_KEYWORDS = {
+    "cheveux",
+    "sport",
+    "rangement",
+    "bain",
+    "microfibre",
+    "douche",
+    "maquillage",
+    "plage",
+    "décoration",
+    "percer",
+    "manucure",
+    "pédicure",
+    "trouse",
+    "stérilisateur",
+    "cuisine",
+    "éponge",
+    "épilation",
+    "épilateur",
+}
 
 
 def is_antirobot(driver: webdriver.Chrome) -> bool:
