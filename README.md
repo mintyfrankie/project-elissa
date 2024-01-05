@@ -54,7 +54,10 @@ The project uses `pytest` as the testing framework. The `tests` module contains 
 
 ## TODO
 
-- [ ] Setup devcontainer with selenium and chrome
-- [ ] Find ways to exclude irrelevant products in the database
+- [ ] Enforce Pydantic models across modules and update DatabaseClient notation
 - [ ] For reviews, it lacks the rating and title for reviews outside of France. Need to find a way to get them.
-- [ ] Enforce Pydantic models across modules
+- [ ] Find ways to exclude irrelevant products in the database
+- [ ] Setup pytest Github CI/CD
+- [ ] Setup Dashboard Prototype
+- [ ] Setup devcontainer with selenium and chrome
+- [ ] Update README
