@@ -2,9 +2,7 @@
 A spider for scraping the review pages of the website.
 """
 
-import random
 import re
-import time
 from types import SimpleNamespace
 from urllib.parse import urljoin
 
@@ -12,8 +10,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
-from scraping.utils.items import ItemMetadata
-from scraping.utils.spiders import BaseSpider
+from scraping.base import BaseItemScraper, BaseSpiderWorker
+from scraping.common import SeleniumDriver, is_antirobot
+from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
@@ -105,112 +104,182 @@ def get_next_page(driver: webdriver.Chrome) -> str | None:
     return None
 
 
-class ReviewPageSpider(BaseSpider):
-    """
-    A spider for scraping the review pages of the website.
-    """
+class ReviewItemScraper(BaseItemScraper):
+    """A scraper for scraping all review pages for an ASIN."""
 
-    default_pipeline = [
-        {"$match": {"_metadata.review_page_scraped": False}},
-        {"$project": {"asin": 1, "review_url": 1, "_id": 0}},
-    ]
+    def __init__(
+        self, driver: SeleniumDriver, starting_url: str, max_page: int = -1
+    ) -> None:
+        super().__init__(driver, starting_url)
+        self._max_page = max_page
 
-    def __init__(self, driver: webdriver.Chrome) -> None:
-        super().__init__(driver)
-        self.queue = []
-
-    def query(self, pipeline: list[dict] = default_pipeline) -> list[dict]:
+    def parse(self, url: str) -> dict[str, list[str]]:
         """
-        Get the products to scrape.
-        """
+        Parse the review page and extracts relevant information.
 
-        items = list(self.mongodb.collection.aggregate(pipeline))
-        self.queue = items
-        print(f"Found {len(items)} products to scrape.")
-        return items
-
-    def parse(self, url: str) -> dict:
-        """
-        Parse a review page of a product.
+        Returns:
+           dict: A dictionary containing the next page URL and a list of items.
         """
 
         self.driver.get(url)
+        print(f"##### Parsing URL: {url}")
+
+        if is_antirobot(self.driver):
+            return {}
 
         review_cards = get_review_cards(self.driver)
         next_page = get_next_page(self.driver)
-        reviews = []
+        items = []
         if review_cards:
             for review_card in review_cards:
-                review = {}
+                item = {}
                 metadata = get_metadata(review_card)
-                review["rating"] = get_rating(review_card)
-                review["title"] = get_title(review_card)
-                review["country"] = None
-                review["date"] = None
-                review["body"] = get_body(review_card)
+                item["rating"] = get_rating(review_card)
+                item["title"] = get_title(review_card)
+                item["country"] = None
+                item["date"] = None
+                item["body"] = get_body(review_card)
                 if metadata:
-                    review["country"], review["date"] = metadata
-                reviews.append(review)
+                    item["country"], item["date"] = metadata
+                items.append(item)
 
-        # Random sleep.
-        time.sleep(random.uniform(0.5, 1.5))
+        return {"next_page": next_page, "items": items}
 
-        return {"reviews": reviews, "next_page": next_page}
-
-    def run(self, max_page: int = 10) -> None:
+    def run(self) -> None:
         """
-        Run the spider.
+        Executes the spider and collects data from the starting URL and subsequent pages.
+
+        Returns:
+            None
         """
 
-        if not self.queue:
-            raise ValueError("No products to scrape, run query() first.")
+        url = self._starting_url
+        page_count = 0
+        while url and (self._max_page == -1 or page_count < self._max_page):
+            output = self.parse(url)
+            items = output.get("items")
+            self._data.extend(items) if items else None
+            url = output.get("next_page")
+            page_count += 1
 
-        def process_item(product: dict) -> int:
-            """Process the item."""
+    def validate(self) -> bool:
+        """
+        Validates the data.
 
-            asin = product["asin"]
-            review_url = product["review_url"]
+        Returns:
+            bool: True if the data is valid, False otherwise.
+        """
+        return True
 
-            reviews = []
-            page_count = 0
-            while review_url and page_count < max_page:
-                output = self.parse(review_url)
-                reviews += output["reviews"]
-                review_url = output["next_page"]
-                page_count += 1
-                print(f"Scrapping {asin} --- Page {page_count}/{max_page}")
+    def dump(self) -> list[dict]:
+        """
+        Returns the data stored in the object as a list of dictionaries.
 
-            metadata: ItemMetadata = {
-                "last_session_id": self.session_id,
-                "last_session_time": self.strtime,
-                "product_page_scraped": True,
-                "review_page_scraped": True,
+        Returns:
+            list[dict]: The data stored in the object.
+        """
+        return self._data
+
+
+class ReviewPageSpiderWorker(BaseSpiderWorker):
+    """
+    Spider worker class for scraping review pages.
+
+    This class extends the BaseSpiderWorker class and provides methods for querying the database,
+    scraping review pages, updating the database, and logging metadata.
+
+    Attributes:
+        DEFAULT_PIPELINE (list[dict]): The default pipeline used for querying the database.
+        _pipeline (list[dict]): The pipeline used for querying the database.
+        _queue (list): The list of ASINs to be processed.
+        _data (list): The list of scraped review items.
+        __kwargs (dict): Additional keyword arguments.
+
+    Methods:
+        __init__: Initializes the ReviewPageSpiderWorker object.
+        query: Queries the database collection and retrieves a list of ASINs.
+        run: Runs the review page scraping process.
+        log: Logs the metadata.
+    """
+
+    DEFAULT_PIPELINE = [
+        {
+            "$match": {
+                "$and": [
+                    {"_metadata.scrap_status": "ProductPage"},
+                ]
             }
-            product["_metadata"] = metadata
-            product["reviews"] = reviews
+        },
+        {"$project": {"asin": 1, "_id": 0, "review_url": 1}},
+    ]
 
-            self.mongodb.collection.update_one(
-                {"asin": asin},
-                {"$set": product},
+    def __init__(
+        self,
+        driver: SeleniumDriver,
+        action_type: str = "Review Page Scraping",
+        pipeline: list[dict] | None = None,
+        **kwargs,
+    ) -> None:
+        """
+        Initializes the ReviewPageSpiderWorker object.
+
+        Args:
+            driver (SeleniumDriver): The Selenium driver object.
+            action_type (str): The type of action being performed.
+            pipeline (list[dict] | None): The pipeline used for querying the database.
+            **kwargs: Additional keyword arguments.
+
+        """
+        super().__init__(driver, action_type)
+        self._pipeline = pipeline or self.DEFAULT_PIPELINE
+        self.__kwargs = kwargs
+
+    def query(self) -> None:
+        """
+        Queries the database collection and retrieves a list of ASINs.
+        """
+        asins = self.db.collection.aggregate(self._pipeline)
+        self._queue = asins
+
+    def run(self) -> None:
+        """
+        Runs the review page scraping process.
+        """
+        self.query()
+
+        for elem in self._queue:
+            asin = elem.get("asin")
+            url = elem.get("review_url")
+            scraper = ReviewItemScraper(self.driver, url, **self.__kwargs)
+            scraper.run()
+            items = scraper.dump()
+            self._data.extend(items)
+            # add metadata
+            metadata = ItemMetadata(
+                last_session_id=self.session_id,
+                last_session_time=self._init_time,
+                scrap_status="ReviewPage",
             )
+            for item in items:
+                item["asin"] = asin
+                item["_metadata"] = dict(metadata)
 
-            print(f"Scraped {asin}.")
-            return 1
+                # update the database
+                self.db.update_product(item)
 
-        counter = 0
-        for product in self.queue:
-            asin = product["asin"]
-            counter += process_item(product)
-            print(
-                f"Updated {asin} ------------------- Progress {counter}/{len(self.queue)}"
-            )
+        print(f"Updated {len(self._data)} items in total.")
 
-        # Log the session.
-        ACTION_TYPE = "Review Page Scraping"
+    def log(self) -> dict:
+        """
+        Logs the metadata.
 
-        self.meta["action_type"] = ACTION_TYPE
-        self.meta["action_time"] = self.time
-        self.meta["update_count"] = counter
+        This method logs the metadata by adding the action time and update count to the meta dictionary.
+        It then calls the `log` method of the `db` object to store the metadata in the database.
 
-        print(f"Scraped {counter} products.")
-        self.log()
+        Returns:
+            dict: The updated meta dictionary.
+        """
+        self._meta["action_time"] = self.time
+        self._meta["update_count"] = len(self._data)
+        self.db.log(self._meta)
+        return self._meta

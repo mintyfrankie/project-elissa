@@ -93,7 +93,7 @@ class SearchItemScraper(BaseItemScraper):
         self._asins = set(asin_queue) if asin_queue else set()
         self._max_page = max_page
 
-    def parse(self, url: str) -> dict:
+    def parse(self, url: str) -> dict[str, list[dict]]:
         """
         Parses a search page and extracts relevant information.
 
@@ -267,7 +267,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
                 )
-                item["_metadata"] = dict(metadata)
+                item["_metadata"] = metadata
 
                 self.db.update_product(item)
 

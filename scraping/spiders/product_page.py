@@ -264,7 +264,6 @@ class ProductItemScraper(BaseItemScraper):
         return self._item
 
 
-# TODO : add test cases
 class ProductPageSpiderWorker(BaseSpiderWorker):
     """
     Spider worker class for scraping product pages.
@@ -298,11 +297,11 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
     def __init__(
         self,
         driver: SeleniumDriver,
-        action_type: str,
+        action_type: str = "Product Page Scraping",
         pipeline: list[dict] | None = None,
     ) -> None:
         super().__init__(driver, action_type)
-        self._pipeline = pipeline if pipeline else self.DEFAULT_PIPELINE
+        self._pipeline = pipeline or self.DEFAULT_PIPELINE
 
     def query(self) -> None:
         """
