@@ -61,10 +61,10 @@ class TestSearchPageFunctions:
         assert next_page, "Page is not turned"
 
 
-def test_SearchItemScraper(search_page):
+def test_SearchItemScraper(driver):
     """Test the SearchItemScraper."""
     scraper = SearchItemScraper(
-        driver=search_page,
+        driver=driver,
         starting_url="https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"}),
         max_page=1,
     )

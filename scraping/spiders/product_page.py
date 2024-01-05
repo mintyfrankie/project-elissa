@@ -10,8 +10,7 @@ from selenium.webdriver.common.by import By
 
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
-from scraping.utils.items import ItemMetadata
-from scraping.utils.spiders import BaseSpider
+from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
@@ -250,110 +249,107 @@ class ProductItemScraper(BaseItemScraper):
         url = self._starting_url
         print(f"Update {url}")
         item = self.parse(url)
-        self._data.extend(item)
+        self._item = item
 
     def validate(self) -> bool:
         return True
 
-    def dump(self) -> list[dict]:
-        return super().dump()
+    def dump(self) -> dict:
+        """
+        Returns the data stored in the object as a list of dictionaries.
+
+        Returns:
+            dict: The data stored in the object.
+        """
+        return self._item
 
 
-# TODO : finish this
+# TODO : add test cases
 class ProductPageSpiderWorker(BaseSpiderWorker):
-    # TODO: reflect on how to implement the pipeline and metadata update function
-    pass
-
-
-# ! : to be removed in future iterations
-class ProductPageSpider(BaseSpider):
     """
-    A spider for scraping the product pages of the website.
+    Spider worker class for scraping product pages.
+
+    It take a MongoDB pipeline as input for producing a list of ASINs to scrape.
+    A default pipeline is provided querying all documents with status "SearchPage".
+
+    This class inherits from the BaseSpiderWorker class and provides methods to execute the search and scraping process
+    for a given query. It retrieves existing ASINs from the database, updates the internal ASIN set, constructs the search
+    URL for each keyword, runs a scraper to extract ASINs and data, filters out duplicate ASINs, filters the data to include
+    only the ASINs not already in the internal ASIN set, updates the database with the scraped product information, and
+    prints the total number of items updated.
+
+    Args:
+        driver (SeleniumDriver): The Selenium driver instance.
+        action_type (str): The type of action to perform.
+        pipeline (list[dict] | None): The pipeline for querying the database collection. Defaults to None.
     """
 
-    default_pipeline = [
-        {"$match": {"product_page_scraped": False}},
+    DEFAULT_PIPELINE = [
+        {
+            "$match": {
+                "$and": [
+                    {"_metadata.scrap_status": "SearchPage"},
+                ]
+            }
+        },
         {"$project": {"asin": 1, "_id": 0}},
     ]
 
-    def __init__(self, driver: webdriver.Chrome) -> None:
-        super().__init__(driver)
-        self.queue = []
-        self.logs = []
+    def __init__(
+        self,
+        driver: SeleniumDriver,
+        action_type: str,
+        pipeline: list[dict] | None = None,
+    ) -> None:
+        super().__init__(driver, action_type)
+        self._pipeline = pipeline if pipeline else self.DEFAULT_PIPELINE
 
-    def parse(self, url: str) -> dict:
+    def query(self) -> None:
         """
-        Parse the product page.
+        Queries the database collection and retrieves a list of ASINs.
         """
-
-        self.driver.get(url)
-
-        if is_antirobot(self.driver):
-            print("Anti-robot detected.")
-            self.logs.append({"url": self.driver.current_url, "status": "Anti-robot"})
-            return {}
-
-        product = {
-            "price": get_price(self.driver),
-            # "title": get_title(self.driver),
-            "brand": get_brand(self.driver),
-            "avg_rating": get_avg_rating(self.driver),
-            "num_reviews": get_num_reviews(self.driver),
-            "feature_bullets": get_feature_bullets(self.driver),
-            "unities": get_unities(self.driver),
-            "review_url": get_review_url(self.driver),
-        }
-
-        return product
-
-    def query(self, pipeline: list[dict] = default_pipeline) -> list[str]:
-        """
-        Get the products to scrape.
-        """
-
-        items = list(self.mongodb.collection.aggregate(pipeline))
-        items = [doc["asin"] for doc in items]
-        self.queue = items
-        print(f"Found {len(items)} products to scrape.")
-        return items
+        asins = self.db.collection.aggregate(self._pipeline)
+        self._queue = [asin["asin"] for asin in asins]
 
     def run(self) -> None:
         """
-        Execute the spider.
+        Runs the scraping process for each ASIN in the queue.
+        Retrieves product information, updates the database, and prints the total number of items updated.
         """
 
-        if not self.queue:
-            raise ValueError("No products to scrape, run query() first.")
+        self.query()
 
-        def process_item(asin: str) -> int:
+        for asin in self._queue:
             url = f"https://www.amazon.fr/dp/{asin}"
-            product = self.parse(url)
-            output: ItemMetadata = {
-                "last_session_id": self.session_id,
-                "last_session_time": self.strtime,
-                "product_page_scraped": True,
-                "review_page_scraped": False,
-            }
-            product["_metadata"] = output
-            self.mongodb.collection.update_one(
-                {"asin": asin},
-                {"$set": product},
+            scraper = ProductItemScraper(self.driver, url)
+            scraper.run()
+            item = scraper.dump()
+            self._data.extend(item)
+            # add metadata
+            metadata = ItemMetadata(
+                last_session_id=self.session_id,
+                last_session_time=self._init_time,
+                scrap_status="ProductPage",
             )
-            return 1
+            item["asin"] = asin
+            item["_metadata"] = dict(metadata)
 
-        counter = 0
-        for asin in self.queue:
-            counter += process_item(asin)
-            print(f"Updated {asin} --- Progress {counter}/{len(self.queue)}")
+            # update the database
+            self.db.update_product(item)
 
-        # Log the session.
-        ACTION_TYPE = "Product Page Scraping"
+        print(f"Updated {len(self._data)} items in total.")
 
-        self.meta["action_type"] = ACTION_TYPE
-        self.meta["action_time"] = self.time
-        self.meta["update_count"] = counter
-        self.meta["anomalies"] = self.logs
+    def log(self) -> dict:
+        """
+        Log the meta data.
 
-        print(f"Scraped {counter} products.")
-        self.log()
-        self.driver.quit()
+        This method logs the meta data by adding the action time and update count to the meta dictionary.
+        It then calls the `log` method of the `db` object to store the meta data in the database.
+
+        Returns:
+            dict: The updated meta dictionary.
+        """
+        self._meta["action_time"] = self.time
+        self._meta["update_count"] = len(self._data)
+        self.db.log(self._meta)
+        return self._meta

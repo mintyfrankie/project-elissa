@@ -4,6 +4,8 @@ Test the ProductPageSpider.
 
 
 from scraping.spiders.product_page import (
+    ProductItemScraper,
+    ProductPageSpiderWorker,
     get_avg_rating,
     get_brand,
     get_feature_bullets,
@@ -65,3 +67,34 @@ class TestProductPageFunctions:
         unities = get_unities(product_page)
         assert unities, "Unities are not found"
         assert unities > 0, "Unities are not positive"
+
+
+def test_ProductItemScraper(driver):
+    """Test the ProductItemScraper."""
+
+    scraper = ProductItemScraper(
+        driver, starting_url="https://www.amazon.fr/dp/B082VVRKTP"
+    )
+    scraper.run()
+    data = scraper.dump()
+    assert isinstance(data, dict), "Data is not a dictionary"
+    assert data != {}, "Data is empty"
+
+
+def test_ProductPageSpiderWorker(driver):
+    """Test the ProductPageSpiderWorker."""
+
+    try:
+        pipeline = [
+            {"$match": {"asin": "B082VVRKTP"}},
+            {"$project": {"_id": 0, "asin": 1}},
+        ]
+        with ProductPageSpiderWorker(
+            driver=driver,
+            action_type="Testing - pytest test_ProductPageSpiderWorker",
+            pipeline=pipeline,
+        ) as worker:
+            worker.run()
+        pass
+    except Exception as e:
+        assert False, f"Exception raised: {e}"

@@ -207,9 +207,17 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         queue: list[str] | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(driver, action_type, queue, None)
+        super().__init__(driver, action_type)
+        self._query = queue
         self._asins = set()
         self.__kwargs = kwargs
+
+    def query(self) -> None:
+        """
+        No query for this spider,
+        as the queue is defined in the constructor.
+        """
+        pass
 
     def run(self) -> None:
         """

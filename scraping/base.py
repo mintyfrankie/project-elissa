@@ -53,8 +53,6 @@ class BaseSpiderWorker(ABC):
         self,
         driver: SeleniumDriver,
         action_type: str,
-        queue: list[str] | None = None,
-        pipeline: list[dict] | None = None,
     ) -> None:
         from mongodb.client import DatabaseClient
 
@@ -64,15 +62,6 @@ class BaseSpiderWorker(ABC):
         self._meta = {}
         self._logged = False
         self._init_time = datetime.now()
-
-        if queue is None and pipeline is None:
-            raise ValueError("Either queue or pipeline must be provided.")
-        elif queue is not None and pipeline is not None:
-            raise ValueError("Only one of queue and pipeline can be provided.")
-        elif queue is not None:
-            self._query = queue
-        elif pipeline is not None:
-            self._pipeline = pipeline
 
         self.mongodb = DatabaseClient(action_type=action_type)
         self.session_id = self.mongodb.session_id
@@ -90,8 +79,17 @@ class BaseSpiderWorker(ABC):
         print("SeleniumDriver closed.")
 
     @abstractmethod
+    def query(self) -> None:
+        """Query the database for constructing the queue used in run()."""
+        raise NotImplementedError
+
+    @abstractmethod
     def run(self) -> None:
-        """Run the spider."""
+        """
+        Run the spider.
+
+        The spider should iterate over the queue and process each item.
+        """
         raise NotImplementedError
 
     @abstractmethod
