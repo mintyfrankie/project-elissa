@@ -88,7 +88,7 @@ def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
 
 
 # ! : to be removed in future iterations
-def CustomDriver() -> webdriver.Chrome:
+def get_driver() -> webdriver.Chrome:
     """Create a custom Chrome driver."""
 
     options = Options()

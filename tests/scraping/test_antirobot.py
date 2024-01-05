@@ -2,7 +2,7 @@
 A test module for check if we see antirobot pages across all spiders.
 """
 
-from scraping.utils import is_antirobot
+from scraping.common import is_antirobot
 
 
 def test_search_antirobot(search_page):

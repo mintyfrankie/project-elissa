@@ -1,7 +1,9 @@
-import pytest
 from urllib.parse import urlencode
-from scraping.utils import CustomDriver
+
+import pytest
+
 from mongodb.client import DatabaseClient
+from scraping.common import get_driver
 
 PRODUCT_ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 REVIEW_URLS = [
@@ -13,7 +15,7 @@ REVIEW_URLS = [
 @pytest.fixture(scope="module")
 def driver():
     """Create a headless Chrome driver."""
-    with CustomDriver() as driver:
+    with get_driver() as driver:
         yield driver
     driver.quit()
 

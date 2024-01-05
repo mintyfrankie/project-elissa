@@ -267,7 +267,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
                 )
-                item["_metadata"] = metadata
+                item["_metadata"] = dict(metadata)
 
                 self.db.update_product(item)
 
