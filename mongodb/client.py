@@ -3,13 +3,14 @@
 
 import datetime
 
-from bson import json_util
 import pandas as pd
+from bson import json_util
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from mongodb.items import DatabaseCounter
 
-from scraping.utils.items import SearchItem, SessionLog, SessionLogInfo, ProductItem
+from scraping.interfaces import ProductItem
+
+from .interfaces import DatabaseCounter, SessionLog, SessionLogInfo
 
 
 def load_env_uri() -> str:
@@ -121,20 +122,7 @@ class DatabaseClient:
         current_counter = self.get_counter()
         return current_counter
 
-    # !: To be deprecated
-    def get_sessionid(self) -> int:
-        """Update the log counter, and return the current count."""
-
-        self.counter_collection.update_one(
-            {"_id": "logid"},
-            {"$inc": {"seq": 1}},
-        )
-
-        counter = self.counter_collection.find_one({"_id": "logid"})
-        if counter is None:
-            raise ValueError("Counter is None, check the collection.")
-        return counter["seq"]
-
+    # TODO: refactor SessionLogInfo and SessionLog to be a dataclass, check reinforcement in other modules
     def log(self, info: SessionLogInfo | dict) -> SessionLog:
         """
         Logs the session information.
@@ -191,12 +179,12 @@ class DatabaseClient:
 
         return list(self.collection.distinct("asin"))
 
-    def update_product(self, product: SearchItem) -> bool:
+    def update_product(self, product: dict) -> bool:
         """
         Updates a product in the collection.
 
         Args:
-            product (SearchItem): The product to be updated.
+            product: The product to be updated.
 
         Returns:
             bool: True if the update was successful, False otherwise.
@@ -227,7 +215,7 @@ class DatabaseClient:
         return items
 
     def export_products(self) -> pd.DataFrame:
-        project = {key: 1 for key in ProductItem.__annotations__}
+        project = {key: 1 for key in ProductItem.model_fields.keys()}
         project["_id"] = 0
 
         EXCLUDED_KEYS = ["_metadata", "review_url"]
