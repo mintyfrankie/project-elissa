@@ -181,6 +181,16 @@ class DatabaseClient:
         """
         return self.collection.find_one({"asin": asin})
 
+    def get_asins(self) -> list[str]:
+        """
+        Retrieves a list of ASINs from the collection.
+
+        Returns:
+            list[str]: A list of ASINs.
+        """
+
+        return list(self.collection.distinct("asin"))
+
     def update_product(self, product: SearchItem) -> bool:
         """
         Updates a product in the collection.

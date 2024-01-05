@@ -9,6 +9,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from mongodb.client import DatabaseClient
 
 from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
 from scraping.utils.base import BaseItemScraper, BaseSpiderWorker
@@ -85,13 +86,17 @@ class SearchItemScraper(BaseItemScraper):
     """A scraper for scraping a set of search pages for a specific keyword."""
 
     def __init__(
-        self, driver: SeleniumDriver, starting_url: str, max_page: int = -1
+        self,
+        driver: SeleniumDriver,
+        starting_url: str,
+        max_page: int = -1,
+        asin_queue: list[str] | None = None,
     ) -> None:
         super().__init__(driver, starting_url)
-        self._asins = set()
+        self._asins = set(asin_queue) if asin_queue else set()
         self._max_page = max_page
 
-    def parse(self) -> dict:
+    def parse(self, url: str) -> dict:
         """
         Parses a search page and extracts relevant information.
 
@@ -99,8 +104,8 @@ class SearchItemScraper(BaseItemScraper):
             dict: A dictionary containing the next page URL and a list of items.
         """
 
-        self.driver.get(self._starting_url)
-        print(f"Current URL: {self.driver.current_url}")
+        self.driver.get(url)
+        print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
@@ -116,12 +121,13 @@ class SearchItemScraper(BaseItemScraper):
             item = parse_asin_card(asin_card)
             if item["asin"] != "" and item["asin"] not in self._asins:
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
-                    print(f"{item['asin']} is filtered.")
+                    print(f"Filtered {item['asin']}.")
                     continue
-                self._asins.add(item["asin"])
-                items.append(item)
+            print(f"Updated {item['asin']}.")
+            self._asins.add(item["asin"])
+            items.append(item)
 
-        print(f"Scraped {len(items)} items.")
+        print(f"### Scraped {len(items)} items.")
         next_page = get_nextpage(self.driver)
 
         return {"next_page": next_page, "items": items}
@@ -138,7 +144,7 @@ class SearchItemScraper(BaseItemScraper):
         while url:
             if self._max_page != -1 and page_count >= self._max_page:
                 break
-            output = self.parse()
+            output = self.parse(url=url)
             items = output["items"]
             self._data.extend(items)
             url = output.get("next_page")
@@ -173,8 +179,6 @@ class SearchItemScraper(BaseItemScraper):
         return self._data
 
 
-# ? : How to handle the queue? The idea to to query the database first
-# ? : and then scrape the search pages for the new ASINs.
 class SearchPageSpiderWorker(BaseSpiderWorker):
     def __init__(
         self,
@@ -183,32 +187,68 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         queue: list[str] | None = None,
     ) -> None:
         super().__init__(driver, action_type, queue, None)
-        self.asins = set()
+        self._asins = set()
 
     def run(self) -> None:
+        """
+        Executes the search and scraping process for the given query.
+
+        This method performs the following steps:
+        1. Retrieves existing ASINs from the database.
+        2. Updates the internal ASIN set with the existing ASINs.
+        3. Iterates over each keyword in the query.
+        4. Constructs the search URL for the keyword.
+        5. Initializes a SearchItemScraper with the driver, URL, and existing ASINs.
+        6. Runs the scraper to extract ASINs and data.
+        7. Filters out duplicate ASINs from the scraper results.
+        8. Filters the data to include only the ASINs not already in the internal ASIN set.
+        9. Appends the filtered data to the internal data list.
+        10. Updates the database with the scraped product information.
+        11. Prints the total number of items updated.
+
+        Returns:
+            None
+        """
+        existing_asins = self.db.get_asins()
+        self._asins.update(existing_asins)
+
         for keyword in self._query:
             url = "https://www.amazon.fr/s?" + urlencode({"k": keyword})
             scraper = SearchItemScraper(
                 driver=self.driver,
                 starting_url=url,
+                asin_queue=existing_asins,
             )
             scraper.run()
             scaper_asins = scraper.asins
             data = scraper.dump()
             # filter only asins that are not in the asin set
-            scaper_asins = [asin for asin in scaper_asins if asin not in self.asins]
-            self.asins.update(scaper_asins)
+            scaper_asins = [asin for asin in scaper_asins if asin not in self._asins]
+            self._asins.update(scaper_asins)
             # filter the data to only include the asins that are not in the asin set
             data = [item for item in data if item["asin"] in scaper_asins]
             self._data.extend(data)
             # update the database
             for item in data:
                 self.db.update_product(item)
-            # log the meta data
-            self._meta["action_time"] = self.time
-            self._meta["update_count"] = len(data)
-            self._meta["query_keywords"] = list(self._query)
-            self.db.log(self._meta)
+
+        print(f"Updated {len(self._data)} items in total.")
+
+    def log(self) -> dict:
+        """
+        Log the meta data.
+
+        This method logs the meta data by adding the action time, update count, and query keywords to the meta dictionary.
+        It then calls the `log` method of the `db` object to store the meta data in the database.
+
+        Returns:
+            dict: The updated meta dictionary.
+        """
+        self._meta["action_time"] = self.time
+        self._meta["update_count"] = len(self._data)
+        self._meta["query_keywords"] = list(self._query)
+        self.db.log(self._meta)
+        return self._meta
 
 
 # !: Deprecated
