@@ -17,6 +17,7 @@ matplotlib = "^3.8.2"
 fastapi = "^0.108.0"
 streamlit = "^1.29.0"
 plotly = "^5.18.0"
+pydantic = "^2.5.3"
 
 
 [tool.poetry.group.dev.dependencies]
