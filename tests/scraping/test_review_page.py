@@ -4,6 +4,8 @@ Test the ReviewPageSpider.
 
 
 from scraping.spiders.review_page import (
+    ReviewItemScraper,
+    ReviewPageSpiderWorker,
     get_body,
     get_metadata,
     get_next_page,
@@ -61,3 +63,34 @@ class TestReviewPageFunctions:
             next_page != review_page.current_url
         ), "Next page is the same as current page"
         assert isinstance(next_page, str), "Next page is not a string"
+
+
+def test_ReviewItemScraper(driver):
+    """Test the ReviewItemScraper."""
+    scraper = ReviewItemScraper(
+        driver=driver,
+        starting_url="https://www.amazon.fr/Nana-Goodnight-Serviettes-Hygi%C3%A9niques-Ailettes/product-reviews/B09WBF4NYJ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
+        max_page=1,
+    )
+    scraper.run()
+    data = scraper.dump()
+    assert len(data) > 0, "No data is scraped"
+    assert scraper.validate(), "Data is not validated"
+
+
+def test_ReviewPageSpiderWorker(driver):
+    """Test the ReviewPageSpiderWorker."""
+    try:
+        pipeline = [
+            {"$match": {"asin": "B082VVRKTP"}},
+            {"$project": {"asin": 1, "_id": 0, "review_url": 1}},
+        ]
+        with ReviewPageSpiderWorker(
+            driver=driver,
+            action_type="Testing - pytest test_ReviewPageSpiderWorker",
+            pipeline=pipeline,
+            max_page=1,
+        ) as worker:
+            worker.run()
+    except Exception as e:
+        assert False, f"Exception raised: {e}"

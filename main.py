@@ -1,14 +1,14 @@
 from mongodb.client import DatabaseClient
+from scraping.common import QUERY_KEYWORDS, get_driver
 from scraping.spiders.product_page import ProductPageSpider
 from scraping.spiders.review_page import ReviewPageSpider
-from scraping.spiders.search_page import SearchPageSpider
-from scraping.utils import QUERY_KEYWORDS, CustomDriver
+from scraping.spiders.search_page import SearchPageSpiderWorker
 
-driver = CustomDriver()
+driver = get_driver()
 
 
 def scrape_search_page():
-    with SearchPageSpider(driver, QUERY_KEYWORDS) as spider:
+    with SearchPageSpiderWorker(driver, queue=QUERY_KEYWORDS) as spider:
         spider.run()
 
 
@@ -34,7 +34,7 @@ def save_collection():
 
 
 if __name__ == "__main__":
-    # scrape_search_page()
+    scrape_search_page()
     # scrape_product_page()
-    scrape_review_page()
+    # scrape_review_page()
     # save_collection()

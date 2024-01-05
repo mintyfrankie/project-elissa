@@ -1,5 +1,6 @@
 """
 Identify the fields for the items
+! : to be removed in future iterations
 """
 
 from typing import NotRequired, TypedDict
@@ -68,4 +69,5 @@ class SessionLog(TypedDict):
 
     id: int
     time: str
+    action_type: str
     info: SessionLogInfo | dict

@@ -3,7 +3,12 @@ Test the SearchPageSpider.
 """
 
 
+from urllib.parse import urlencode
+
+from scraping.common import QUERY_KEYWORDS
 from scraping.spiders.search_page import (
+    SearchItemScraper,
+    SearchPageSpiderWorker,
     get_asin_cards,
     get_mainframe,
     get_nextpage,
@@ -54,3 +59,30 @@ class TestSearchPageFunctions:
 
         next_page = get_nextpage(search_page)
         assert next_page, "Page is not turned"
+
+
+def test_SearchItemScraper(driver):
+    """Test the SearchItemScraper."""
+    scraper = SearchItemScraper(
+        driver=driver,
+        starting_url="https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"}),
+        max_page=1,
+    )
+    scraper.run()
+    data = scraper.dump()
+    assert len(data) > 0, "No data is scraped"
+    assert scraper.validate(), "Data is not validated"
+
+
+def test_SearchPageSpiderWorker(driver):
+    """Test the SearchPageSpiderWorker."""
+    try:
+        with SearchPageSpiderWorker(
+            driver=driver,
+            action_type="Testing - pytest test_SearchPageSpiderWorker",
+            queue=list(QUERY_KEYWORDS)[0],
+            max_page=1,
+        ) as worker:
+            worker.run()
+    except Exception as e:
+        assert False, f"Exception raised: {e}"
