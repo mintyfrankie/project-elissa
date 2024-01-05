@@ -10,9 +10,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
-from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
+from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -142,8 +142,8 @@ class SearchItemScraper(BaseItemScraper):
             if self._max_page != -1 and page_count >= self._max_page:
                 break
             output = self.parse(url=url)
-            items = output["items"]
-            self._data.extend(items)
+            items = output.get("items")
+            self._data.extend(items) if items else None
             url = output.get("next_page")
             page_count += 1
 
@@ -176,15 +176,18 @@ class SearchItemScraper(BaseItemScraper):
         return self._data
 
 
+# TODO: setup tests for this class
 class SearchPageSpiderWorker(BaseSpiderWorker):
     def __init__(
         self,
         driver: SeleniumDriver,
         action_type: str = "Search Page Scraping",
         queue: list[str] | None = None,
+        **kwargs,
     ) -> None:
         super().__init__(driver, action_type, queue, None)
         self._asins = set()
+        self.__kwargs = kwargs
 
     def run(self) -> None:
         """
@@ -215,6 +218,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                 driver=self.driver,
                 starting_url=url,
                 asin_queue=existing_asins,
+                **self.__kwargs,
             )
             scraper.run()
             scaper_asins = scraper.asins

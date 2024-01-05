@@ -8,10 +8,10 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from scraping.common import is_antirobot
+from scraping.base import BaseItemScraper, BaseSpiderWorker
+from scraping.common import SeleniumDriver, is_antirobot
 from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
-
 
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
@@ -199,6 +199,73 @@ def get_review_url(driver: webdriver.Chrome) -> str | None:
     return None
 
 
+class ProductItemScraper(BaseItemScraper):
+    """A scraper for scraping a product pages for a specific ASIN."""
+
+    def __init__(
+        self,
+        driver: SeleniumDriver,
+        starting_url: str,
+    ) -> None:
+        super().__init__(driver, starting_url)
+        self._url = starting_url
+
+    def parse(self, url: str) -> dict:
+        """
+        Parses the product page and extracts relevant information.
+
+        Args:
+            url (str): The URL of the product page.
+
+        Returns:
+            dict: A dictionary containing the extracted information.
+        """
+        self.driver.get(url)
+
+        if is_antirobot(self.driver):
+            return {}
+
+        item = {
+            "price": get_price(self.driver),
+            "brand": get_brand(self.driver),
+            "avg_rating": get_avg_rating(self.driver),
+            "num_reviews": get_num_reviews(self.driver),
+            "feature_bullets": get_feature_bullets(self.driver),
+            "unities": get_unities(self.driver),
+            "review_url": get_review_url(self.driver),
+        }
+
+        return item
+
+    def run(self) -> None:
+        """
+        Executes the spider and scrapes data from the starting URL.
+
+        This method initializes the spider with the starting URL, prints the URL being updated,
+        calls the `parse` method to scrape data from the URL, and extends the spider's data with the scraped item.
+
+        Returns:
+            None
+        """
+        url = self._starting_url
+        print(f"Update {url}")
+        item = self.parse(url)
+        self._data.extend(item)
+
+    def validate(self) -> bool:
+        return True
+
+    def dump(self) -> list[dict]:
+        return super().dump()
+
+
+# TODO : finish this
+class ProductPageSpiderWorker(BaseSpiderWorker):
+    # TODO: reflect on how to implement the pipeline and metadata update function
+    pass
+
+
+# ! : to be removed in future iterations
 class ProductPageSpider(BaseSpider):
     """
     A spider for scraping the product pages of the website.

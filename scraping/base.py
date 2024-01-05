@@ -3,6 +3,7 @@ Base class for all spiders
 """
 
 from abc import ABC, abstractmethod
+
 from .common import SeleniumDriver
 
 
@@ -58,6 +59,7 @@ class BaseSpiderWorker(ABC):
 
         self.driver = driver
         self.db = DatabaseClient(action_type=action_type)
+        self._data = []
         self._meta = {}
         self._logged = False
 

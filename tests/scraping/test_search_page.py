@@ -4,13 +4,16 @@ Test the SearchPageSpider.
 
 
 from urllib.parse import urlencode
+
 from scraping.spiders.search_page import (
+    SearchItemScraper,
+    SearchPageSpiderWorker,
     get_asin_cards,
     get_mainframe,
     get_nextpage,
     parse_asin_card,
-    SearchItemScraper,
 )
+from scraping.utils.constants import QUERY_KEYWORDS
 
 
 class TestSearchPageFunctions:
@@ -69,3 +72,17 @@ def test_SearchItemScraper(search_page):
     data = scraper.dump()
     assert len(data) > 0, "No data is scraped"
     assert scraper.validate(), "Data is not validated"
+
+
+def test_SearchPageSpiderWorker(driver):
+    """Test the SearchPageSpiderWorker."""
+    try:
+        with SearchPageSpiderWorker(
+            driver=driver,
+            action_type="Testing - pytest test_SearchPageSpiderWorker",
+            queue=list(QUERY_KEYWORDS)[0],
+            max_page=1,
+        ) as worker:
+            worker.run()
+    except Exception as e:
+        assert False, f"Exception raised: {e}"
