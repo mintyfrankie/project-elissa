@@ -5,6 +5,7 @@ Test the SearchPageSpider.
 
 from urllib.parse import urlencode
 
+from scraping.common import QUERY_KEYWORDS
 from scraping.spiders.search_page import (
     SearchItemScraper,
     SearchPageSpiderWorker,
@@ -13,7 +14,6 @@ from scraping.spiders.search_page import (
     get_nextpage,
     parse_asin_card,
 )
-from scraping.utils.constants import QUERY_KEYWORDS
 
 
 class TestSearchPageFunctions:

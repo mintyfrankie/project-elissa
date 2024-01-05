@@ -1,10 +1,10 @@
 from mongodb.client import DatabaseClient
+from scraping.common import QUERY_KEYWORDS, get_driver
 from scraping.spiders.product_page import ProductPageSpider
 from scraping.spiders.review_page import ReviewPageSpider
 from scraping.spiders.search_page import SearchPageSpiderWorker
-from scraping.utils import QUERY_KEYWORDS, CustomDriver
 
-driver = CustomDriver()
+driver = get_driver()
 
 
 def scrape_search_page():
