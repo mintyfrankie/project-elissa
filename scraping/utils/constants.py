@@ -30,5 +30,3 @@ EXCLUDE_KEYWORDS = {
     "épilation",
     "épilateur",
 }
-
-TEST_SCRAPPING_ITEM_LIMIT = 50

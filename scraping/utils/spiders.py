@@ -1,13 +1,13 @@
 """
 Base class for all spiders
+! : to be removed in future iterations
 """
 
 from datetime import datetime
 from time import time
-from .common import SeleniumDriver
+from ..common import SeleniumDriver
 
 
-# !: to be removed in future iterations
 class BaseSpider:
     """A base spider class."""
 

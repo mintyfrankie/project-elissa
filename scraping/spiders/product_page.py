@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from scraping.utils.common import is_antirobot
+from scraping.common import is_antirobot
 from scraping.utils.items import ItemMetadata
 from scraping.utils.spiders import BaseSpider
 

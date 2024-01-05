@@ -9,13 +9,10 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from mongodb.client import DatabaseClient
 
 from scraping.utils import EXCLUDE_KEYWORDS, is_filtered
-from scraping.utils.base import BaseItemScraper, BaseSpiderWorker
-from scraping.utils.common import SeleniumDriver, is_antirobot
-from scraping.utils.items import ItemMetadata, SearchItem
-from scraping.utils.spiders import BaseSpider
+from scraping.base import BaseItemScraper, BaseSpiderWorker
+from scraping.common import SeleniumDriver, is_antirobot
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -249,106 +246,3 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         self._meta["query_keywords"] = list(self._query)
         self.db.log(self._meta)
         return self._meta
-
-
-# !: Deprecated
-class OldSearchPageSpider(BaseSpider):
-    """A spider for scraping the search pages of the website."""
-
-    def __init__(self, driver: webdriver.Chrome, keywords: set[str]) -> None:
-        super().__init__(driver)
-
-        self.keywords = keywords
-        self.urls = [
-            "https://www.amazon.fr/s?" + urlencode({"k": keyword})
-            for keyword in keywords
-        ]
-        self.asins = set()
-        self.meta = {}
-        self.data = []
-        self.logs = []
-
-        print("SearchPageSpider is initialized.")
-
-    def parse(self, url: str) -> dict:
-        """Parse a searching page."""
-
-        self.driver.get(url)
-        print(f"current_url: {self.driver.current_url}")
-
-        if is_antirobot(self.driver):
-            print("Anti-robot check is triggered.")
-            self.logs.append({"url": self.driver.current_url, "status": "Anti-robot"})
-            return {}
-
-        items = []
-
-        main_frame = get_mainframe(self.driver)
-
-        if main_frame == [] or main_frame is None:
-            return {}
-
-        asin_cards = get_asin_cards(main_frame)
-
-        for asin_card in asin_cards:
-            item = parse_asin_card(asin_card)
-            if item["asin"] != "" and item["asin"] not in self.asins:
-                if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
-                    print(f"{item['asin']} is filtered.")
-                    continue
-                self.asins.add(item["asin"])
-                items.append(item)
-
-        print(f"Scraped {len(items)} items.")
-        next_page = get_nextpage(self.driver)
-
-        return {"next_page": next_page, "items": items}
-
-    def run(self) -> list[SearchItem]:
-        """
-        Run the spider.
-
-        The spider will scrape the search pages for the given keywords, collecting all ASINs on the pages.
-        If the scraped ASIN is not in the database, the spider will create a new document for it.
-        """
-
-        def process_item(item: SearchItem) -> int:
-            """Process the item."""
-            if not self.mongodb.check_product(item["asin"]):
-                item["_metadata"] = ItemMetadata(
-                    last_session_id=self.session_id,
-                    last_session_time=self.strtime,
-                    product_page_scraped=False,
-                    review_page_scraped=False,
-                )
-
-                self.mongodb.update_product(item)
-                print(f"Updated {item['asin']}.")
-                return 1
-            else:
-                print(f"{item['asin']} is already in the database.")
-                return 0
-
-        counter = 0
-        for url in self.urls:
-            while url:
-                output = self.parse(url)
-                items = output["items"]
-                for item in items:
-                    counter += process_item(item)
-                self.data.extend(items)
-                url = output.get("next_page")
-
-        # Log the meta data.
-        ACTION_TYPE = "Search Page Scraping"
-        item_count = len(self.data)
-
-        self.meta["action_type"] = ACTION_TYPE
-        self.meta["action_time"] = self.time
-        self.meta["update_count"] = counter
-        self.meta["query_keywords"] = list(self.keywords)
-        self.meta["anomalies"] = self.logs
-
-        print(f"Scraped {item_count} items in total, {counter} items are new.")
-        self.log()
-        return self.data
