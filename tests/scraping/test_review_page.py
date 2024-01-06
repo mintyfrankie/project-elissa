@@ -3,6 +3,8 @@ Test the ReviewPageSpider.
 """
 
 
+from datetime import datetime
+
 from scraping.spiders.review_page import (
     ReviewItemScraper,
     ReviewPageSpiderWorker,
@@ -46,7 +48,7 @@ class TestReviewPageFunctions:
         assert isinstance(metadata, tuple), "Metadata is not a tuple"
         assert len(metadata) == 2, "Metadata is not of length 2"
         assert isinstance(metadata[0], str), "Country is not a string"
-        assert isinstance(metadata[1], str), "Date is not a string"
+        assert isinstance(metadata[1], datetime), "Date is not a string"
 
     def test_get_body(self, review_page):
         """Test if the body is found."""
