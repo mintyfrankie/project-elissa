@@ -18,8 +18,9 @@ from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
-    rating=".//i[@data-hook='review-star-rating']//span",
+    rating=".//i[@data-hook='review-star-rating' or @data-hook='cmps-review-star-rating']//span",
     title=".//a[@data-hook='review-title']//span[not(@class)]",
+    title_2=".//span[@data-hook='review-title']/span[@class='cr-original-review-content']",
     metadata=".//span[@data-hook='review-date']",
     body=".//span[@data-hook='review-body']",
     next_page="//li[@class='a-last']//a[@href]",
@@ -58,6 +59,12 @@ def get_title(review_card: WebElement) -> str | None:
     if title:
         title = title[0].get_attribute("textContent")
         return title
+
+    title = review_card.find_elements(By.XPATH, PATTERNS.title_2)
+    if title:
+        title = title[0].get_attribute("textContent")
+        return title
+
     return None
 
 

@@ -28,17 +28,19 @@ class TestReviewPageFunctions:
     def test_get_rating(self, review_page):
         """Test if the rating is found."""
         review_cards = get_review_cards(review_page)
-        rating = get_rating(review_cards[0])
-        assert rating, "Rating is not found"
-        assert isinstance(rating, int), "Rating is not an integer"
-        assert 1 <= rating <= 5, "Rating is not between 1 and 5"
+        for review_card in review_cards:
+            rating = get_rating(review_card)
+            assert rating, "Rating is not found"
+            assert isinstance(rating, int), "Rating is not an integer"
+            assert 1 <= rating <= 5, "Rating is not between 1 and 5"
 
     def test_get_title(self, review_page):
         """Test if the title is found."""
         review_cards = get_review_cards(review_page)
-        title = get_title(review_cards[0])
-        assert title, "Title is not found"
-        assert isinstance(title, str), "Title is not a string"
+        for review_card in review_cards:
+            title = get_title(review_card)
+            assert title, "Title is not found"
+            assert isinstance(title, str), "Title is not a string"
 
     def test_get_metadata(self, review_page):
         """Test if the metadata is found."""

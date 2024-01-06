@@ -7,8 +7,8 @@ from scraping.common import get_driver
 
 PRODUCT_ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
 REVIEW_URLS = [
-    "https://www.amazon.fr/SUPVOX-serviettes-hygi%C3%A9niques-pochettes-menstruelle/product-reviews/B07XLKC4WZ/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
     "https://www.amazon.fr/Always-ProFresh-Serviettes-Pochettes-Individuelles/product-reviews/B082VVRKTP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
+    "https://www.amazon.fr/biologique-r%C3%A9utilisable-lavable-d%C3%A9chet-al%C3%A9atoires/product-reviews/B089PR8GSX/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
 ]
 
 
@@ -33,7 +33,7 @@ def product_page(request, driver):
 )
 def review_page(driver, request):
     """Set up the review page."""
-    review_page_url = "https://www.amazon.fr/Always-Prot%C3%A8ge-Slips-Incontinence-Protection-Int%C3%A9grale/product-reviews/B00QTJ23IS/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"
+    review_page_url = request.param
     driver.get(review_page_url)
     return driver
 
