@@ -2,6 +2,7 @@
 For testing the MongoDB pipeline.
 """
 from mongodb.client import load_env_uri
+from mongodb.interfaces import SessionLogInfo
 
 
 def test_load_env_uri():
@@ -28,7 +29,8 @@ class TestDatabaseClient:
     def test_log(self, db_client):
         """Test if the log is created."""
 
-        logid = db_client.log("Pytest: test_log")
+        info = SessionLogInfo(update_count=0, message="Test log")
+        logid = db_client.log(info)
         assert logid, "Log is not created"
 
     def test_update_product(self, db_client, product):

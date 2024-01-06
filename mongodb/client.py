@@ -1,7 +1,8 @@
 """A client for MongoDB access."""
 
 
-import datetime
+from datetime import datetime
+from email import message
 
 import pandas as pd
 from bson import json_util
@@ -74,7 +75,11 @@ class DatabaseClient:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.logged:
-            self.log({"message": "Session ended without inserting info."})
+            self.log(
+                SessionLogInfo(
+                    update_count=0, message="Session ended without inserting info."
+                )
+            )
         self.close()
 
     def close(self):
@@ -122,8 +127,7 @@ class DatabaseClient:
         current_counter = self.get_counter()
         return current_counter
 
-    # TODO: refactor SessionLogInfo and SessionLog to be a dataclass, check reinforcement in other modules
-    def log(self, info: SessionLogInfo | dict) -> SessionLog:
+    def log(self, info: SessionLogInfo) -> SessionLog:
         """
         Logs the session information.
 
@@ -138,11 +142,11 @@ class DatabaseClient:
         id = self.get_counter()
         content = SessionLog(
             id=id,
-            time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            time=datetime.now(),
             action_type=self.action_type,
             info=info,
         )
-        self.log_collection.insert_one(content)
+        self.log_collection.insert_one(content.model_dump())
         return content
 
     def check_product(self, asin: str) -> bool:

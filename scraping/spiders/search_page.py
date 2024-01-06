@@ -10,6 +10,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
 from scraping.interfaces import ItemMetadata
@@ -210,6 +211,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         super().__init__(driver, action_type)
         self._query = queue
         self._asins = set()
+        self._updated_asins = set()
         self.__kwargs = kwargs
 
     def query(self) -> None:
@@ -255,6 +257,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
             data = scraper.dump()
             # filter only asins that are not in the asin set
             scaper_asins = [asin for asin in scaper_asins if asin not in self._asins]
+            self._updated_asins.update(scaper_asins)
             self._asins.update(scaper_asins)
             # filter the data to only include the asins that are not in the asin set
             data = [item for item in data if item["asin"] in scaper_asins]
@@ -283,8 +286,9 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         Returns:
             dict: The updated meta dictionary.
         """
-        self._meta["action_time"] = self.time
         self._meta["update_count"] = len(self._data)
         self._meta["query_keywords"] = list(self._query)
-        self.db.log(self._meta)
+        self._meta["updated_asins"] = list(self._updated_asins)
+        info = SessionLogInfo(**self._meta)
+        self.db.log(info)
         return self._meta

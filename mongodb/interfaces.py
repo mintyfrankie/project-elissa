@@ -12,24 +12,27 @@ It includes the following classes and data structures:
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TypedDict
 
+from pydantic import BaseModel, ConfigDict
 
 # ! Refactor this to be a dataclass / pydantic model
-class SessionLogInfo(TypedDict):
-    """A session log info."""
 
-    action_type: str
-    action_time: int
+
+class SessionLogInfo(BaseModel):
+    """A session log info that scarping workers pass to log their actions."""
+
+    model_config = ConfigDict(extra="allow")
+
     update_count: int
 
 
-# ! Refactor this to be a dataclass / pydantic model
-class SessionLog(TypedDict):
-    counter: int
-    type: str
+class SessionLog(BaseModel):
+    """A session log."""
+
+    id: int
     time: datetime
-    info: dict[str, str] | None
+    action_type: str
+    info: SessionLogInfo | None
 
 
 @dataclass

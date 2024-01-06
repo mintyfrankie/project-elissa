@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
 from scraping.interfaces import ItemMetadata
@@ -348,7 +349,8 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         Returns:
             dict: The updated meta dictionary.
         """
-        self._meta["action_time"] = self.time
         self._meta["update_count"] = len(self._data)
-        self.db.log(self._meta)
+        self._meta["updated_asins"] = self._queue
+        info = SessionLogInfo(**self._meta)
+        self.db.log(info)
         return self._meta
