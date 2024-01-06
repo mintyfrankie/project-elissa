@@ -3,6 +3,7 @@ A spider for scraping the review pages of the website.
 """
 
 import re
+from datetime import datetime
 from types import SimpleNamespace
 from urllib.parse import urljoin
 
@@ -17,8 +18,9 @@ from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
-    rating=".//i[@data-hook='review-star-rating']//span",
+    rating=".//i[@data-hook='review-star-rating' or @data-hook='cmps-review-star-rating']//span",
     title=".//a[@data-hook='review-title']//span[not(@class)]",
+    title_2=".//span[@data-hook='review-title']/span[@class='cr-original-review-content']",
     metadata=".//span[@data-hook='review-date']",
     body=".//span[@data-hook='review-body']",
     next_page="//li[@class='a-last']//a[@href]",
@@ -57,6 +59,12 @@ def get_title(review_card: WebElement) -> str | None:
     if title:
         title = title[0].get_attribute("textContent")
         return title
+
+    title = review_card.find_elements(By.XPATH, PATTERNS.title_2)
+    if title:
+        title = title[0].get_attribute("textContent")
+        return title
+
     return None
 
 
@@ -71,9 +79,34 @@ def get_metadata(review_card: WebElement) -> tuple[str, str] | None:
         if metadata:
             metadata = re.split(r"\sle\s", metadata, maxsplit=1)
             if len(metadata) == 2:
-                country = metadata[0].replace("Commenté", "").strip()
+                country = metadata[0]
+                replacements = ["Évaluté", "Commenté", "en", "aux", "au", "à"]
+                for x in replacements:
+                    country = country.replace(x, " ").strip()
                 date = metadata[1].strip()
-                return country, date
+                french_to_english_months = {
+                    "janvier": "January",
+                    "février": "February",
+                    "mars": "March",
+                    "avril": "April",
+                    "mai": "May",
+                    "juin": "June",
+                    "juillet": "July",
+                    "août": "August",
+                    "septembre": "September",
+                    "octobre": "October",
+                    "novembre": "November",
+                    "décembre": "December",
+                }
+
+                def convert_to_datetime(date_string):
+                    for fr, en in french_to_english_months.items():
+                        date_string = date_string.replace(fr, en)
+                    return datetime.strptime(date_string, "%d %B %Y")
+
+                date = convert_to_datetime(date)
+
+            return country, date
     return None
 
 

@@ -3,6 +3,8 @@ Test the ReviewPageSpider.
 """
 
 
+from datetime import datetime
+
 from scraping.spiders.review_page import (
     ReviewItemScraper,
     ReviewPageSpiderWorker,
@@ -26,17 +28,19 @@ class TestReviewPageFunctions:
     def test_get_rating(self, review_page):
         """Test if the rating is found."""
         review_cards = get_review_cards(review_page)
-        rating = get_rating(review_cards[0])
-        assert rating, "Rating is not found"
-        assert isinstance(rating, int), "Rating is not an integer"
-        assert 1 <= rating <= 5, "Rating is not between 1 and 5"
+        for review_card in review_cards:
+            rating = get_rating(review_card)
+            assert rating, "Rating is not found"
+            assert isinstance(rating, int), "Rating is not an integer"
+            assert 1 <= rating <= 5, "Rating is not between 1 and 5"
 
     def test_get_title(self, review_page):
         """Test if the title is found."""
         review_cards = get_review_cards(review_page)
-        title = get_title(review_cards[0])
-        assert title, "Title is not found"
-        assert isinstance(title, str), "Title is not a string"
+        for review_card in review_cards:
+            title = get_title(review_card)
+            assert title, "Title is not found"
+            assert isinstance(title, str), "Title is not a string"
 
     def test_get_metadata(self, review_page):
         """Test if the metadata is found."""
@@ -46,7 +50,7 @@ class TestReviewPageFunctions:
         assert isinstance(metadata, tuple), "Metadata is not a tuple"
         assert len(metadata) == 2, "Metadata is not of length 2"
         assert isinstance(metadata[0], str), "Country is not a string"
-        assert isinstance(metadata[1], str), "Date is not a string"
+        assert isinstance(metadata[1], datetime), "Date is not a string"
 
     def test_get_body(self, review_page):
         """Test if the body is found."""
