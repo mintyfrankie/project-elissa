@@ -5,6 +5,7 @@ Interfaces for data validation in the pipeline.
 from datetime import datetime
 from typing import Literal, Optional
 
+from click import Option
 from pydantic import (
     BaseModel,
     Field,
@@ -61,17 +62,18 @@ class ReviewItem(BaseModel):
     date: str | None
 
 
-class ProductItem(BaseItem):
-    """A complete product document, extended by ProductPageSpiderWorker and ReviewPageSpiderWorker."""
+class ProductItem(BaseModel):
+    """A complete product document, extended by ProductPageSpiderWorker."""
 
-    brand: str
+    asin: Optional[str] = None
     price: float | None
-    unities: float | None
+    brand: str
     avg_rating: float | None
     num_reviews: int | None
-    features_bullets: list[str] | None
+    feature_bullets: list[str] | None
+    unities: float | None
     review_url: HttpUrl | None
-    reviews: Optional[list[ReviewItem]] = None
+    metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_serializer("review_url")
     def url2str(self, val) -> str:

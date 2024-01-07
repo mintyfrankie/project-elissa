@@ -10,8 +10,8 @@ from selenium.webdriver.common.by import By
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot
-from scraping.interfaces import ItemMetadata
+from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.interfaces import ItemMetadata, ProductItem
 
 ITEM_SCRAPER_VERSION: int = 1
 
@@ -250,7 +250,6 @@ class ProductItemScraper(BaseItemScraper):
             None
         """
         url = self._starting_url
-        print(f"Update {url}")
         item = self.parse(url)
         self._item = item
 
@@ -325,23 +324,27 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
+            random_sleep()
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()
             item = scraper.dump()
-            self._data.extend(item)
+            if item == {}:
+                continue
+            item = ProductItem(**item)
             # add metadata
+            item.asin = asin
             metadata = ItemMetadata(
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ProductPage",
                 ProductItemScraper_version=ITEM_SCRAPER_VERSION,
             )
-            item["asin"] = asin
-            item["_metadata"] = dict(metadata)
+            item.metadata = metadata
 
             # update the database
-            self.db.update_product(item)
+            self._data.append(item)
+            self.db.update_product(item.model_dump(by_alias=True))
             print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")
