@@ -13,7 +13,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
-from scraping.interfaces import ItemMetadata
+from scraping.interfaces import BaseItem, ItemMetadata
 
 ITEM_SCRAPER_VERSION: int = 1
 
@@ -123,8 +123,9 @@ class SearchItemScraper(BaseItemScraper):
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
                     print(f"Filtered {item['asin']}.")
                     continue
-                print(f"Updated {item['asin']}.")
-                self._asins.add(item["asin"])
+                item = BaseItem(**item)
+                print(f"Updated {item.asin}.")
+                self._asins.add(item.asin)
                 items.append(item)
 
         print(f"### Scraped {len(items)} items.")
@@ -169,7 +170,7 @@ class SearchItemScraper(BaseItemScraper):
         """
         return self._asins
 
-    def dump(self) -> list[dict]:
+    def dump(self) -> list[BaseItem]:
         """
         Returns the data stored in the object as a list of dictionaries.
 
@@ -273,9 +274,9 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     scrap_status="SearchPage",
                     SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
-                item["_metadata"] = dict(metadata)
+                item._metadata = metadata
 
-                self.db.update_product(item)
+                self.db.update_product(item.model_dump())
 
         print(f"Updated {len(self._data)} items in total.")
 
