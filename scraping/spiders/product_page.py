@@ -330,6 +330,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
             scraper.run()
             item = scraper.dump()
             if item == {}:
+                print(f"Failed to scrape {asin}")
                 continue
             item = ProductItem(**item)
             # add metadata
