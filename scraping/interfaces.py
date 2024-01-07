@@ -5,7 +5,8 @@ Interfaces for data validation in the pipeline.
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, HttpUrl, field_serializer, field_validator
+from pydantic_core import Url
 
 SCRAP_STATUS = Literal["SearchPage", "ProductPage", "ReviewPage"]
 
@@ -37,6 +38,12 @@ class BaseItem(BaseModel):
             raise ValueError("ASIN must start with 'B0'")
         return v
 
+    @field_serializer("thumbnail")
+    def url2str(self, val) -> str:
+        if isinstance(val, Url):
+            return str(val)
+        return val
+
 
 class ReviewItem(BaseModel):
     """A review on Amazon."""
@@ -59,3 +66,9 @@ class ProductItem(BaseItem):
     features_bullets: list[str] | None
     review_url: HttpUrl | None
     reviews: Optional[list[ReviewItem]] = None
+
+    @field_serializer("review_url")
+    def url2str(self, val) -> str:
+        if isinstance(val, Url):
+            return str(val)
+        return val

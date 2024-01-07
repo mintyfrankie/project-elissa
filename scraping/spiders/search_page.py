@@ -121,7 +121,7 @@ class SearchItemScraper(BaseItemScraper):
             item = parse_asin_card(asin_card)
             if item["asin"] != "" and item["asin"] not in self._asins:
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
-                    print(f"Filtered {item['asin']}.")
+                    print(f"Filtered {item["asin"]}.")
                     continue
                 item = BaseItem(**item)
                 print(f"Updated {item.asin}.")
@@ -263,7 +263,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
             self._updated_asins.update(scaper_asins)
             self._asins.update(scaper_asins)
             # filter the data to only include the asins that are not in the asin set
-            data = [item for item in data if item["asin"] in scaper_asins]
+            data = [item for item in data if item.asin in scaper_asins]
             self._data.extend(data)
             # update the database
             for item in data:
