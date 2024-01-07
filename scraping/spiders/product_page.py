@@ -211,6 +211,7 @@ class ProductItemScraper(BaseItemScraper):
     ) -> None:
         super().__init__(driver, starting_url)
         self._url = starting_url
+        self._is_antirobot = False
 
     def parse(self, url: str) -> dict:
         """
@@ -225,7 +226,7 @@ class ProductItemScraper(BaseItemScraper):
         self.driver.get(url)
 
         if is_antirobot(self.driver):
-            return {}
+            self._is_antirobot = True
 
         item = {
             "price": get_price(self.driver),
@@ -254,7 +255,7 @@ class ProductItemScraper(BaseItemScraper):
         self._item = item
 
     def validate(self) -> bool:
-        return True
+        return False if self._is_antirobot else True
 
     def dump(self) -> dict:
         """
@@ -328,10 +329,10 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             item = scraper.dump()
-            if item == {}:
-                print(f"Failed to scrape {asin}")
-                continue
             item = ProductItem(**item)
             # add metadata
             item.asin = asin
