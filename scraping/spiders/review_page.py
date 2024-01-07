@@ -1,5 +1,7 @@
 """
 A spider for scraping the review pages of the website.
+
+TODO: Fix the issue encountered with this spider that the review pages are not always available due to anti-robot. 
 """
 
 import re
@@ -303,7 +305,7 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
             )
             elem["_metadata"] = dict(metadata)
 
-            self._data.extend(elem)
+            self._data.append(elem)
             self.db.update_product(elem)
             print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 

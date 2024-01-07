@@ -5,7 +5,6 @@ Interfaces for data validation in the pipeline.
 from datetime import datetime
 from typing import Literal, Optional
 
-from click import Option
 from pydantic import BaseModel, HttpUrl, field_validator
 
 SCRAP_STATUS = Literal["SearchPage", "ProductPage", "ReviewPage"]
@@ -59,4 +58,4 @@ class ProductItem(BaseItem):
     num_reviews: int | None
     features_bullets: list[str] | None
     review_url: HttpUrl | None
-    reviews: list[ReviewItem] | None
+    reviews: Optional[list[ReviewItem]] = None
