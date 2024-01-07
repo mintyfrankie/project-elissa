@@ -87,12 +87,14 @@ def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
     return driver
 
 
-# ! : to be removed in future iterations
-def get_driver() -> webdriver.Chrome:
-    """Create a custom Chrome driver."""
+def random_sleep(min: float = 0.3, max: float = 1.5, message: bool = True) -> float:
+    """Sleep for a random time between min and max seconds."""
 
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--lang=fr")
-    driver = webdriver.Chrome(options=options)
-    return driver
+    import random
+    import time
+
+    sec = random.uniform(min, max)
+    time.sleep(sec)
+    if message:
+        print(f"Sleeping for {sec:.2f} seconds.")
+    return sec

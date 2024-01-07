@@ -12,8 +12,16 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
-from scraping.interfaces import ItemMetadata
+from scraping.common import (
+    EXCLUDE_KEYWORDS,
+    SeleniumDriver,
+    is_antirobot,
+    is_filtered,
+    random_sleep,
+)
+from scraping.interfaces import BaseItem, ItemMetadata
+
+ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -93,6 +101,7 @@ class SearchItemScraper(BaseItemScraper):
         super().__init__(driver, starting_url)
         self._asins = set(asin_queue) if asin_queue else set()
         self._max_page = max_page
+        self._is_antirobot = False
 
     def parse(self, url: str) -> dict[str, list[dict]]:
         """
@@ -103,11 +112,10 @@ class SearchItemScraper(BaseItemScraper):
         """
 
         self.driver.get(url)
-        print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
-            return {}
+            return {"is_antirobot": True}
 
         items = []
         main_frame = get_mainframe(self.driver)
@@ -119,13 +127,11 @@ class SearchItemScraper(BaseItemScraper):
             item = parse_asin_card(asin_card)
             if item["asin"] != "" and item["asin"] not in self._asins:
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
-                    print(f"Filtered {item['asin']}.")
                     continue
-            print(f"Updated {item['asin']}.")
-            self._asins.add(item["asin"])
-            items.append(item)
+                item = BaseItem(**item)
+                self._asins.add(item.asin)
+                items.append(item)
 
-        print(f"### Scraped {len(items)} items.")
         next_page = get_nextpage(self.driver)
 
         return {"next_page": next_page, "items": items}
@@ -143,10 +149,14 @@ class SearchItemScraper(BaseItemScraper):
             if self._max_page != -1 and page_count >= self._max_page:
                 break
             output = self.parse(url=url)
+            if output.get("is_antirobot"):
+                break
             items = output.get("items")
             self._data.extend(items) if items else None
             url = output.get("next_page")
+            random_sleep(message=False)
             page_count += 1
+            print(f"Scraped Page {page_count}")
 
     def validate(self) -> bool:
         """
@@ -155,7 +165,7 @@ class SearchItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True
+        return True if not self._is_anti_robot else False
 
     @property
     def asins(self) -> set[str]:
@@ -167,7 +177,7 @@ class SearchItemScraper(BaseItemScraper):
         """
         return self._asins
 
-    def dump(self) -> list[dict]:
+    def dump(self) -> list[BaseItem]:
         """
         Returns the data stored in the object as a list of dictionaries.
 
@@ -246,6 +256,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
 
         for keyword in self._query:
             url = "https://www.amazon.fr/s?" + urlencode({"k": keyword})
+            print(f"Scraping Pages for Keyword: {keyword}")
             scraper = SearchItemScraper(
                 driver=self.driver,
                 starting_url=url,
@@ -253,6 +264,9 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                 **self.__kwargs,
             )
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             scaper_asins = scraper.asins
             data = scraper.dump()
             # filter only asins that are not in the asin set
@@ -260,7 +274,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
             self._updated_asins.update(scaper_asins)
             self._asins.update(scaper_asins)
             # filter the data to only include the asins that are not in the asin set
-            data = [item for item in data if item["asin"] in scaper_asins]
+            data = [item for item in data if item.asin in scaper_asins]
             self._data.extend(data)
             # update the database
             for item in data:
@@ -269,12 +283,14 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_id=self.session_id,
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
+                    SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
-                item["_metadata"] = dict(metadata)
+                item.metadata = metadata
 
-                self.db.update_product(item)
+                self.db.update_product(item.model_dump(by_alias=True))
+            print(f"Updated {len(data)} items.")
 
-        print(f"Updated {len(self._data)} items in total.")
+        print(f"Total Updated: {len(self._data)}")
 
     def log(self) -> dict:
         """
@@ -291,4 +307,5 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         self._meta["updated_asins"] = list(self._updated_asins)
         info = SessionLogInfo(**self._meta)
         self.db.log(info)
+        self._logged = True
         return self._meta

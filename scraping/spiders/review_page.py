@@ -13,8 +13,10 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot
+from scraping.common import SeleniumDriver, is_antirobot, random_sleep
 from scraping.interfaces import ItemMetadata
+
+ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
@@ -146,6 +148,7 @@ class ReviewItemScraper(BaseItemScraper):
     ) -> None:
         super().__init__(driver, starting_url)
         self._max_page = max_page
+        self._is_anti_robot = False
 
     def parse(self, url: str) -> dict[str, list[str]]:
         """
@@ -159,7 +162,8 @@ class ReviewItemScraper(BaseItemScraper):
         print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
-            return {}
+            self._is_anti_robot = True
+            return {"is_antirobot": True}
 
         review_cards = get_review_cards(self.driver)
         next_page = get_next_page(self.driver)
@@ -191,10 +195,14 @@ class ReviewItemScraper(BaseItemScraper):
         page_count = 0
         while url and (self._max_page == -1 or page_count < self._max_page):
             output = self.parse(url)
+            if output.get("is_antirobot"):
+                break
             items = output.get("items")
-            self._data.extend(items) if items else None
+            self._data.append(items) if items else None
             url = output.get("next_page")
             page_count += 1
+            print(f"Scraped Page {page_count}")
+            random_sleep()
 
     def validate(self) -> bool:
         """
@@ -203,7 +211,7 @@ class ReviewItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True
+        return True if not self._is_anti_robot else False
 
     def dump(self) -> list[dict]:
         """
@@ -272,34 +280,42 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         """
         Queries the database collection and retrieves a list of ASINs.
         """
-        asins = self.db.collection.aggregate(self._pipeline)
+        asins = list(self.db.collection.aggregate(self._pipeline))
         self._queue = asins
 
     def run(self) -> None:
         """
         Runs the review page scraping process.
         """
+
         self.query()
+        if self._pipeline == self.DEFAULT_PIPELINE:
+            print("Use default pipeline to query the database.")
+        print(f"Found {len(self._queue)} items to update.")
 
         for elem in self._queue:
             asin = elem.get("asin")
             url = elem.get("review_url")
             scraper = ReviewItemScraper(self.driver, url, **self.__kwargs)
+            print(f"Scraping reviews for Product: {asin}")
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             items = scraper.dump()
-            self._data.extend(items)
+            elem["reviews"] = items
             # add metadata
             metadata = ItemMetadata(
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ReviewPage",
+                ReviewItemScraper_version=ITEM_SCRAPER_VERSION,
             )
-            for item in items:
-                item["asin"] = asin
-                item["_metadata"] = dict(metadata)
+            elem["_metadata"] = dict(metadata)
 
-                # update the database
-                self.db.update_product(item)
+            self._data.append(elem)
+            self.db.update_product(elem)
+            print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")
 

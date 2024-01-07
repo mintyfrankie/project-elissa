@@ -10,8 +10,10 @@ from selenium.webdriver.common.by import By
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot
-from scraping.interfaces import ItemMetadata
+from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.interfaces import ItemMetadata, ProductItem
+
+ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
@@ -209,6 +211,7 @@ class ProductItemScraper(BaseItemScraper):
     ) -> None:
         super().__init__(driver, starting_url)
         self._url = starting_url
+        self._is_antirobot = False
 
     def parse(self, url: str) -> dict:
         """
@@ -223,7 +226,7 @@ class ProductItemScraper(BaseItemScraper):
         self.driver.get(url)
 
         if is_antirobot(self.driver):
-            return {}
+            self._is_antirobot = True
 
         item = {
             "price": get_price(self.driver),
@@ -248,12 +251,11 @@ class ProductItemScraper(BaseItemScraper):
             None
         """
         url = self._starting_url
-        print(f"Update {url}")
         item = self.parse(url)
         self._item = item
 
     def validate(self) -> bool:
-        return True
+        return False if self._is_antirobot else True
 
     def dump(self) -> dict:
         """
@@ -318,24 +320,34 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         """
 
         self.query()
+        if self._pipeline == self.DEFAULT_PIPELINE:
+            print("Use default pipeline to query the database.")
+        print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
+            random_sleep()
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             item = scraper.dump()
-            self._data.extend(item)
+            item = ProductItem(**item)
             # add metadata
+            item.asin = asin
             metadata = ItemMetadata(
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ProductPage",
+                ProductItemScraper_version=ITEM_SCRAPER_VERSION,
             )
-            item["asin"] = asin
-            item["_metadata"] = dict(metadata)
+            item.metadata = metadata
 
             # update the database
-            self.db.update_product(item)
+            self._data.append(item)
+            self.db.update_product(item.model_dump(by_alias=True))
+            print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")
 
@@ -353,4 +365,5 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         self._meta["updated_asins"] = self._queue
         info = SessionLogInfo(**self._meta)
         self.db.log(info)
+        self._logged = True
         return self._meta

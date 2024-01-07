@@ -15,8 +15,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-# ! Refactor this to be a dataclass / pydantic model
-
 
 class SessionLogInfo(BaseModel):
     """A session log info that scarping workers pass to log their actions."""

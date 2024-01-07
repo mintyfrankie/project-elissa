@@ -63,9 +63,8 @@ class BaseSpiderWorker(ABC):
         self._logged = False
         self._init_time = datetime.now()
 
-        self.mongodb = DatabaseClient(action_type=action_type)
-        self.session_id = self.mongodb.session_id
-        if not self.mongodb.check_connection():
+        self.session_id = self.db.session_id
+        if not self.db.check_connection():
             raise ConnectionError("Database connection failed.")
         print("DatabaseClient initialized with successful connection to MongoDB.")
 
@@ -73,7 +72,9 @@ class BaseSpiderWorker(ABC):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.mongodb.close()
+        if not self._logged:
+            self.log()
+        self.db.close()
         print("DatabaseClient closed.")
         self.driver.quit()
         print("SeleniumDriver closed.")

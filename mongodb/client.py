@@ -67,14 +67,14 @@ class DatabaseClient:
         self.log_collection = self.db[self.LOG_COLLECTION_NAME]
         self.counter_collection = self.db[self.COUNTER_COLLECTION_NAME]
         self.session_id = self.get_counter()
-        self.logged = False
+        self._logged = False
         self.action_type = action_type
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.logged:
+        if not self._logged:
             self.log(
                 SessionLogInfo(
                     update_count=0, message="Session ended without inserting info."
@@ -147,6 +147,7 @@ class DatabaseClient:
             info=info,
         )
         self.log_collection.insert_one(content.model_dump())
+        self._logged = True
         return content
 
     def check_product(self, asin: str) -> bool:
