@@ -85,14 +85,3 @@ def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
         case _:
             raise ValueError("Invalid driver type.")
     return driver
-
-
-# ! : to be removed in future iterations
-def get_driver() -> webdriver.Chrome:
-    """Create a custom Chrome driver."""
-
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--lang=fr")
-    driver = webdriver.Chrome(options=options)
-    return driver
