@@ -13,6 +13,7 @@ from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
 from scraping.interfaces import ItemMetadata
 
+ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
@@ -334,6 +335,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ProductPage",
+                ProductItemScraper_version=ITEM_SCRAPER_VERSION,
             )
             item["asin"] = asin
             item["_metadata"] = dict(metadata)

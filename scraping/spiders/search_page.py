@@ -15,6 +15,8 @@ from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
 from scraping.interfaces import ItemMetadata
 
+ITEM_SCRAPER_VERSION: int = 1
+
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
     asins="//div[@data-asin]",
@@ -269,6 +271,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_id=self.session_id,
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
+                    SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
                 item["_metadata"] = dict(metadata)
 

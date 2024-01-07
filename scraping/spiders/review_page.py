@@ -16,6 +16,8 @@ from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
 from scraping.interfaces import ItemMetadata
 
+ITEM_SCRAPER_VERSION: int = 1
+
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
     rating=".//i[@data-hook='review-star-rating' or @data-hook='cmps-review-star-rating']//span",
@@ -297,6 +299,7 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ReviewPage",
+                ReviewItemScraper_version=ITEM_SCRAPER_VERSION,
             )
             elem["_metadata"] = dict(metadata)
 
