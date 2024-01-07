@@ -101,6 +101,7 @@ class SearchItemScraper(BaseItemScraper):
         super().__init__(driver, starting_url)
         self._asins = set(asin_queue) if asin_queue else set()
         self._max_page = max_page
+        self._is_antirobot = False
 
     def parse(self, url: str) -> dict[str, list[dict]]:
         """
@@ -114,7 +115,7 @@ class SearchItemScraper(BaseItemScraper):
 
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
-            return {}
+            return {"is_antirobot": True}
 
         items = []
         main_frame = get_mainframe(self.driver)
@@ -148,6 +149,8 @@ class SearchItemScraper(BaseItemScraper):
             if self._max_page != -1 and page_count >= self._max_page:
                 break
             output = self.parse(url=url)
+            if output.get("is_antirobot"):
+                break
             items = output.get("items")
             self._data.extend(items) if items else None
             url = output.get("next_page")
@@ -162,7 +165,7 @@ class SearchItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True
+        return True if not self._is_anti_robot else False
 
     @property
     def asins(self) -> set[str]:
@@ -261,6 +264,9 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                 **self.__kwargs,
             )
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             scaper_asins = scraper.asins
             data = scraper.dump()
             # filter only asins that are not in the asin set

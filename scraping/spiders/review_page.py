@@ -162,6 +162,7 @@ class ReviewItemScraper(BaseItemScraper):
         print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
+            self._is_anti_robot = True
             return {"is_antirobot": True}
 
         review_cards = get_review_cards(self.driver)
@@ -194,10 +195,9 @@ class ReviewItemScraper(BaseItemScraper):
         page_count = 0
         while url and (self._max_page == -1 or page_count < self._max_page):
             output = self.parse(url)
-            items = output.get("items")
-            if items.get("is_antirobot"):
-                self._is_anti_robot = True
+            if output.get("is_antirobot"):
                 break
+            items = output.get("items")
             self._data.append(items) if items else None
             url = output.get("next_page")
             page_count += 1
