@@ -34,7 +34,7 @@ class BaseItem(BaseModel):
     asin: str
     title: str | None
     thumbnail: HttpUrl | None
-    metadata: Optional[ItemMetadata] = Field(..., serialization_alias="_metadata")
+    metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_validator("asin")
     @classmethod
