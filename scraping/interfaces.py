@@ -3,9 +3,16 @@ Interfaces for data validation in the pipeline.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    HttpUrl,
+    field_serializer,
+    field_validator,
+)
+from pydantic_core import Url
 
 SCRAP_STATUS = Literal["SearchPage", "ProductPage", "ReviewPage"]
 
@@ -16,6 +23,9 @@ class ItemMetadata(BaseModel):
     last_session_id: int
     last_session_time: datetime
     scrap_status: SCRAP_STATUS
+    SearchItemScraper_version: Optional[int] = None
+    ProductItemScraper_version: Optional[int] = None
+    ReviewItemScraper_version: Optional[int] = None
 
 
 class BaseItem(BaseModel):
@@ -24,7 +34,7 @@ class BaseItem(BaseModel):
     asin: str
     title: str | None
     thumbnail: HttpUrl | None
-    _metadata: ItemMetadata
+    metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_validator("asin")
     @classmethod
@@ -34,25 +44,38 @@ class BaseItem(BaseModel):
             raise ValueError("ASIN must start with 'B0'")
         return v
 
+    @field_serializer("thumbnail")
+    def url2str(self, val) -> str:
+        if isinstance(val, Url):
+            return str(val)
+        return val
+
 
 class ReviewItem(BaseModel):
     """A review on Amazon."""
 
-    content: str | None
+    body: str | None
     rating: int | None
     title: str | None
     location: str | None
     date: str | None
 
 
-class ProductItem(BaseItem):
-    """A complete product document, extended by ProductPageSpiderWorker and ReviewPageSpiderWorker."""
+class ProductItem(BaseModel):
+    """A complete product document, extended by ProductPageSpiderWorker."""
 
-    brand: str
+    asin: Optional[str] = None
     price: float | None
-    unities: float | None
+    brand: str
     avg_rating: float | None
     num_reviews: int | None
-    features_bullets: list[str] | None
+    feature_bullets: list[str] | None
+    unities: float | None
     review_url: HttpUrl | None
-    reviews: list[ReviewItem] | None
+    metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
+
+    @field_serializer("review_url")
+    def url2str(self, val) -> str:
+        if isinstance(val, Url):
+            return str(val)
+        return val
