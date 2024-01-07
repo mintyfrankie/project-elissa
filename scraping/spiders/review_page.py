@@ -272,14 +272,18 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         """
         Queries the database collection and retrieves a list of ASINs.
         """
-        asins = self.db.collection.aggregate(self._pipeline)
+        asins = list(self.db.collection.aggregate(self._pipeline))
         self._queue = asins
 
     def run(self) -> None:
         """
         Runs the review page scraping process.
         """
+
         self.query()
+        if self._pipeline == self.DEFAULT_PIPELINE:
+            print("Use default pipeline to query the database.")
+        print(f"Found {len(self._queue)} items to update.")
 
         for elem in self._queue:
             asin = elem.get("asin")
@@ -287,19 +291,18 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
             scraper = ReviewItemScraper(self.driver, url, **self.__kwargs)
             scraper.run()
             items = scraper.dump()
-            self._data.extend(items)
+            elem["reviews"] = items
             # add metadata
             metadata = ItemMetadata(
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ReviewPage",
             )
-            for item in items:
-                item["asin"] = asin
-                item["_metadata"] = dict(metadata)
+            elem["_metadata"] = dict(metadata)
 
-                # update the database
-                self.db.update_product(item)
+            self._data.extend(elem)
+            self.db.update_product(elem)
+            print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")
 

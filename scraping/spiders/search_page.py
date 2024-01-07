@@ -121,9 +121,9 @@ class SearchItemScraper(BaseItemScraper):
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
                     print(f"Filtered {item['asin']}.")
                     continue
-            print(f"Updated {item['asin']}.")
-            self._asins.add(item["asin"])
-            items.append(item)
+                print(f"Updated {item['asin']}.")
+                self._asins.add(item["asin"])
+                items.append(item)
 
         print(f"### Scraped {len(items)} items.")
         next_page = get_nextpage(self.driver)
@@ -291,4 +291,5 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         self._meta["updated_asins"] = list(self._updated_asins)
         info = SessionLogInfo(**self._meta)
         self.db.log(info)
+        self._logged = True
         return self._meta

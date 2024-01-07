@@ -3,7 +3,7 @@ Interfaces for data validation in the pipeline.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, HttpUrl, field_validator
 
@@ -16,6 +16,9 @@ class ItemMetadata(BaseModel):
     last_session_id: int
     last_session_time: datetime
     scrap_status: SCRAP_STATUS
+    SearchItemScraper_version: Optional[int] = None
+    ProductItemScraper_version: Optional[int] = None
+    ReviewItemScraper_version: Optional[int] = None
 
 
 class BaseItem(BaseModel):
@@ -38,7 +41,7 @@ class BaseItem(BaseModel):
 class ReviewItem(BaseModel):
     """A review on Amazon."""
 
-    content: str | None
+    body: str | None
     rating: int | None
     title: str | None
     location: str | None

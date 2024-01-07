@@ -13,6 +13,7 @@ from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot
 from scraping.interfaces import ItemMetadata
 
+
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
     price_2="//div[@data-feature-name='corePriceDisplay_desktop']//span[contains(@class, 'aok-offscreen')]",
@@ -318,6 +319,9 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         """
 
         self.query()
+        if self._pipeline == self.DEFAULT_PIPELINE:
+            print("Use default pipeline to query the database.")
+        print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
             url = f"https://www.amazon.fr/dp/{asin}"
@@ -336,6 +340,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
 
             # update the database
             self.db.update_product(item)
+            print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")
 
@@ -353,4 +358,5 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         self._meta["updated_asins"] = self._queue
         info = SessionLogInfo(**self._meta)
         self.db.log(info)
+        self._logged = True
         return self._meta
