@@ -1,7 +1,5 @@
 """
 A spider for scraping the review pages of the website.
-
-TODO: Fix the issue encountered with this spider that the review pages are not always available due to anti-robot. 
 """
 
 import re
@@ -15,7 +13,7 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot
+from scraping.common import SeleniumDriver, is_antirobot, random_sleep
 from scraping.interfaces import ItemMetadata
 
 ITEM_SCRAPER_VERSION: int = 1
@@ -150,6 +148,7 @@ class ReviewItemScraper(BaseItemScraper):
     ) -> None:
         super().__init__(driver, starting_url)
         self._max_page = max_page
+        self._is_anti_robot = False
 
     def parse(self, url: str) -> dict[str, list[str]]:
         """
@@ -163,7 +162,7 @@ class ReviewItemScraper(BaseItemScraper):
         print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
-            return {}
+            return {"is_antirobot": True}
 
         review_cards = get_review_cards(self.driver)
         next_page = get_next_page(self.driver)
@@ -196,9 +195,14 @@ class ReviewItemScraper(BaseItemScraper):
         while url and (self._max_page == -1 or page_count < self._max_page):
             output = self.parse(url)
             items = output.get("items")
-            self._data.extend(items) if items else None
+            if items.get("is_antirobot"):
+                self._is_anti_robot = True
+                break
+            self._data.append(items) if items else None
             url = output.get("next_page")
             page_count += 1
+            print(f"Scraped Page {page_count}")
+            random_sleep()
 
     def validate(self) -> bool:
         """
@@ -207,7 +211,7 @@ class ReviewItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True
+        return True if not self._is_anti_robot else False
 
     def dump(self) -> list[dict]:
         """
@@ -293,7 +297,11 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
             asin = elem.get("asin")
             url = elem.get("review_url")
             scraper = ReviewItemScraper(self.driver, url, **self.__kwargs)
+            print(f"Scraping reviews for Product: {asin}")
             scraper.run()
+            if not scraper.validate():
+                print("Anti-robot detected, aborting...")
+                break
             items = scraper.dump()
             elem["reviews"] = items
             # add metadata

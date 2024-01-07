@@ -5,7 +5,6 @@ Interfaces for data validation in the pipeline.
 from datetime import datetime
 from typing import Literal, Optional
 
-from click import Option
 from pydantic import (
     BaseModel,
     Field,
