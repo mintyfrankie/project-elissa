@@ -12,7 +12,13 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import EXCLUDE_KEYWORDS, SeleniumDriver, is_antirobot, is_filtered
+from scraping.common import (
+    EXCLUDE_KEYWORDS,
+    SeleniumDriver,
+    is_antirobot,
+    is_filtered,
+    random_sleep,
+)
 from scraping.interfaces import BaseItem, ItemMetadata
 
 ITEM_SCRAPER_VERSION: int = 1
@@ -105,7 +111,6 @@ class SearchItemScraper(BaseItemScraper):
         """
 
         self.driver.get(url)
-        print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
@@ -121,14 +126,11 @@ class SearchItemScraper(BaseItemScraper):
             item = parse_asin_card(asin_card)
             if item["asin"] != "" and item["asin"] not in self._asins:
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
-                    print(f"Filtered {item["asin"]}.")
                     continue
                 item = BaseItem(**item)
-                print(f"Updated {item.asin}.")
                 self._asins.add(item.asin)
                 items.append(item)
 
-        print(f"### Scraped {len(items)} items.")
         next_page = get_nextpage(self.driver)
 
         return {"next_page": next_page, "items": items}
@@ -149,7 +151,9 @@ class SearchItemScraper(BaseItemScraper):
             items = output.get("items")
             self._data.extend(items) if items else None
             url = output.get("next_page")
+            random_sleep(message=False)
             page_count += 1
+            print(f"Scraped Page {page_count}")
 
     def validate(self) -> bool:
         """
@@ -249,6 +253,7 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
 
         for keyword in self._query:
             url = "https://www.amazon.fr/s?" + urlencode({"k": keyword})
+            print(f"Scraping Pages for Keyword: {keyword}")
             scraper = SearchItemScraper(
                 driver=self.driver,
                 starting_url=url,
@@ -274,11 +279,12 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     scrap_status="SearchPage",
                     SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
-                item._metadata = metadata
+                item.metadata = metadata
 
-                self.db.update_product(item.model_dump())
+                self.db.update_product(item.model_dump(by_alias=True))
+            print(f"Updated {len(data)} items.")
 
-        print(f"Updated {len(self._data)} items in total.")
+        print(f"Total Updated: {len(self._data)}")
 
     def log(self) -> dict:
         """
