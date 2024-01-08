@@ -69,6 +69,7 @@ class ProductItem(BaseModel):
     feature_bullets: list[str] | None
     unities: float | None
     review_url: HttpUrl | None
+    category: str | None
     metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_serializer("review_url")

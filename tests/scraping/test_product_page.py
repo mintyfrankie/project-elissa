@@ -8,6 +8,7 @@ from scraping.spiders.product_page import (
     ProductPageSpiderWorker,
     get_avg_rating,
     get_brand,
+    get_category,
     get_feature_bullets,
     get_num_reviews,
     get_price,
@@ -19,6 +20,12 @@ from scraping.spiders.product_page import (
 
 class TestProductPageFunctions:
     """Test the ProductPageSpider parsing functions."""
+
+    def test_get_category(self, product_page):
+        """Test if the category is found."""
+        is_target, category = get_category(product_page)
+        assert is_target, "Category is not found"
+        assert category, "Category is not found"
 
     def test_get_price(self, product_page):
         """Test if the price is found."""
