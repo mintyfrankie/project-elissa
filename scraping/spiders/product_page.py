@@ -13,8 +13,6 @@ from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import SeleniumDriver, is_antirobot, random_sleep
 from scraping.interfaces import ItemMetadata, ProductItem
 
-ITEM_SCRAPER_VERSION: int = 1
-
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
     price_2="//div[@data-feature-name='corePriceDisplay_desktop']//span[contains(@class, 'aok-offscreen')]",
@@ -340,13 +338,13 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ProductPage",
-                ProductItemScraper_version=ITEM_SCRAPER_VERSION,
             )
             item.metadata = metadata
 
             # update the database
             self._data.append(item)
             self.db.update_product(item.model_dump(by_alias=True))
+
             print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")

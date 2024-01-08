@@ -21,8 +21,6 @@ from scraping.common import (
 )
 from scraping.interfaces import BaseItem, ItemMetadata
 
-ITEM_SCRAPER_VERSION: int = 1
-
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
     asins="//div[@data-asin]",
@@ -165,7 +163,7 @@ class SearchItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True if not self._is_anti_robot else False
+        return True if not self._is_antirobot else False
 
     @property
     def asins(self) -> set[str]:
@@ -283,11 +281,11 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_id=self.session_id,
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
-                    SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
                 item.metadata = metadata
 
                 self.db.update_product(item.model_dump(by_alias=True))
+
             print(f"Updated {len(data)} items.")
 
         print(f"Total Updated: {len(self._data)}")

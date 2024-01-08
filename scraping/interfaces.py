@@ -23,9 +23,6 @@ class ItemMetadata(BaseModel):
     last_session_id: int
     last_session_time: datetime
     scrap_status: SCRAP_STATUS
-    SearchItemScraper_version: Optional[int] = None
-    ProductItemScraper_version: Optional[int] = None
-    ReviewItemScraper_version: Optional[int] = None
 
 
 class BaseItem(BaseModel):

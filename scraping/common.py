@@ -2,8 +2,11 @@
 
 from typing import Literal
 
+import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+DEFAULT_BROWSER_TYPE = "Chrome"
 
 QUERY_KEYWORDS = {
     "serviette femme",
@@ -55,13 +58,15 @@ def is_filtered(title: str, filter: set[str]) -> bool:
 type SeleniumDriver = (
     webdriver.Chrome | webdriver.Firefox | webdriver.Edge | webdriver.Safari
 )
-BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari"]
+BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari", "Undetected"]
 
 
-def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
+def get_driver(driver_type: BrowserType = DEFAULT_BROWSER_TYPE) -> SeleniumDriver:
     """Get a Selenium driver."""
 
     match driver_type:
+        case "Undected":
+            driver = uc.Chrome()
         case "Chrome":
             options = Options()
             options.add_argument("--headless")
