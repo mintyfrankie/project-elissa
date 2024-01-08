@@ -6,7 +6,7 @@ from scraping import (
 )
 from scraping.common import QUERY_KEYWORDS
 
-driver = get_driver("Chrome")
+driver = get_driver("Undetected")
 
 
 def scrape_search_page():
