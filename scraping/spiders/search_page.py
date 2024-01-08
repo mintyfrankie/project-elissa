@@ -16,8 +16,10 @@ from scraping.common import (
     EXCLUDE_KEYWORDS,
     SeleniumDriver,
     is_antirobot,
+    is_captcha,
     is_filtered,
     random_sleep,
+    solve_captcha,
 )
 from scraping.interfaces import BaseItem, ItemMetadata
 
@@ -114,6 +116,9 @@ class SearchItemScraper(BaseItemScraper):
         if is_antirobot(self.driver):
             print("Anti-robot check is triggered.")
             return {"is_antirobot": True}
+
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
 
         items = []
         main_frame = get_mainframe(self.driver)

@@ -61,9 +61,9 @@ class ReviewItem(BaseModel):
 class ProductItem(BaseModel):
     """A complete product document, extended by ProductPageSpiderWorker."""
 
-    asin: Optional[str] = None
+    asin: Optional[str] = None  # Will be added later
     price: float | None
-    brand: str
+    brand: str | None
     avg_rating: float | None
     num_reviews: int | None
     feature_bullets: list[str] | None

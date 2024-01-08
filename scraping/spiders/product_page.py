@@ -10,7 +10,13 @@ from selenium.webdriver.common.by import By
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.common import (
+    SeleniumDriver,
+    is_antirobot,
+    is_captcha,
+    random_sleep,
+    solve_captcha,
+)
 from scraping.interfaces import ItemMetadata, ProductItem
 
 PATTERNS = SimpleNamespace(
@@ -256,6 +262,9 @@ class ProductItemScraper(BaseItemScraper):
         if is_antirobot(self.driver):
             self._is_antirobot = True
 
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
+
         if not is_target(self.driver):
             self._to_filter = True
 
@@ -357,7 +366,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
-            random_sleep()
+            # random_sleep()
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()

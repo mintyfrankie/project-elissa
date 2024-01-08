@@ -13,7 +13,13 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.common import (
+    SeleniumDriver,
+    is_antirobot,
+    is_captcha,
+    random_sleep,
+    solve_captcha,
+)
 from scraping.interfaces import ItemMetadata
 
 PATTERNS = SimpleNamespace(
@@ -162,6 +168,9 @@ class ReviewItemScraper(BaseItemScraper):
         if is_antirobot(self.driver):
             self._is_anti_robot = True
             return {"is_antirobot": True}
+
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
 
         review_cards = get_review_cards(self.driver)
         next_page = get_next_page(self.driver)
