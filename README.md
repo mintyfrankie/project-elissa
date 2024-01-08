@@ -30,7 +30,7 @@ The scraping module uses `Selenium` for webdriver interactions. It contains main
 2. `Product Page`: a spider for scraping products' information from product pages given a list of ASINs.
 3. `Review Page`: a spider for scraping reviews from review pages given a list of ASINs.
 
-For each part, an `ItemScraper` is charged to scrape information around an item, and a worker is charged to orchestrate the queue of `ItemScrapers` and communicate with the Database. 
+For each part, an `ItemScraper` is charged to scrape information around an item, and a `SpiderWorker` is charged to orchestrate the queue of `ItemScrapers`, communicate with the Database, and execute cronjob according to needs.
 
 ### 2. Data Storage - `MongoDB`
 
