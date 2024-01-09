@@ -185,7 +185,7 @@ class ReviewItemScraper(BaseItemScraper):
                 item["body"] = get_body(review_card)
                 if metadata:
                     item["country"], item["date"] = metadata
-                items.extend(item)
+                items.append(item)
 
         return {"next_page": next_page, "items": items}
 
@@ -204,7 +204,8 @@ class ReviewItemScraper(BaseItemScraper):
             if output.get("is_antirobot"):
                 break
             items = output.get("items")
-            self._data.extend(items) if items else None
+            if items:
+                self._data.extend(items)
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
@@ -281,6 +282,7 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         super().__init__(driver, action_type)
         self._pipeline = pipeline or self.DEFAULT_PIPELINE
         self.__kwargs = kwargs
+        self._queue = None
 
     def query(self) -> None:
         """
