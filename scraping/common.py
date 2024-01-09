@@ -108,7 +108,7 @@ def get_driver(driver_type: BrowserType = DEFAULT_BROWSER_TYPE) -> SeleniumDrive
             options = Options()
             options.add_argument("--headless")
             options.add_argument("--lang=fr")
-            driver = SeleniumDriver(options=options)
+            driver = webdriver.Chrome(options=options)
         case "Firefox":
             options = Options()
             options.add_argument("--headless")

@@ -18,7 +18,7 @@ ASIN_LIST = [
 REVIEW_URLS = [
     "https://www.amazon.fr/Vania-Kotydia-Protege-slips-Confort-Normal/product-reviews/B07SC8SH6W/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
     "https://www.amazon.fr/Love-Green-Prot%C3%A8ge-slips-Flexi-28/product-reviews/B082VVDS19/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
-    "https://www.amazon.fr/Always-Dailies-Prot%C3%A8ge-Slips-Confortable-Absorbant/product-reviews/B0BRQRKW5K/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
+    "https://www.amazon.fr/Vania-Kotydia-Protege-slips-Protect-Large/product-reviews/B07YQFYH3V/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
 ]
 
 ### Selenium-related fixtures
@@ -27,7 +27,7 @@ REVIEW_URLS = [
 @pytest.fixture(scope="module")
 def test_driver() -> SeleniumDriver:
     """Create a Selenium Driver."""
-    with get_driver() as x:
+    with get_driver(driver_type="Chrome") as x:
         yield x
     x.quit()
 

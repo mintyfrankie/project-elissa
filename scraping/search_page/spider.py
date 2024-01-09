@@ -4,6 +4,8 @@ Define the SearchItemScraper and SearchPageSpiderWorker class.
 
 from urllib.parse import urlencode
 
+from pydantic import ValidationError
+
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import (
@@ -59,9 +61,12 @@ class SearchItemScraper(BaseItemScraper):
             if item["asin"] != "" and item["asin"] not in self._asins:
                 if item["title"] and is_filtered(item["title"], EXCLUDE_KEYWORDS):
                     continue
-                item = BaseItem(**item)
-                self._asins.add(item.asin)
-                items.append(item)
+                try:
+                    item = BaseItem(**item)
+                    self._asins.add(item.asin)
+                    items.append(item)
+                except ValidationError:
+                    continue
 
         next_page = get_nextpage(self.driver)
 

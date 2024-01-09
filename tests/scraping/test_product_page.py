@@ -26,8 +26,7 @@ class TestProductPageFunctions:
     def test_get_category(self, product_page):
         """Test if the category is found."""
 
-        is_target, category = get_category(product_page)
-        assert is_target, "Category is not found"
+        category = get_category(product_page)
         assert category, "Category is not found"
 
     def test_get_price(self, product_page):
