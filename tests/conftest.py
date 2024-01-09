@@ -1,61 +1,78 @@
+"""
+Contains fixtures for the tests.
+"""
+
 from urllib.parse import urlencode
 
 import pytest
 
 from mongodb.client import DatabaseClient
-from scraping.common import get_driver
+from scraping.common import SeleniumDriver, get_driver
 
-PRODUCT_ASIN_LIST = ["B082VVRKTP", "B07YV42X6F", "B07YQFZ3JD", "B09WYHCCSM"]
-REVIEW_URLS = [
-    "https://www.amazon.fr/Always-ProFresh-Serviettes-Pochettes-Individuelles/product-reviews/B082VVRKTP/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
-    "https://www.amazon.fr/biologique-r%C3%A9utilisable-lavable-d%C3%A9chet-al%C3%A9atoires/product-reviews/B089PR8GSX/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",
+ASIN_LIST = [
+    "B08BX8TTVS",
+    "B082VVDS19",
+    "B07YQFH15Y",
 ]
+
+REVIEW_URLS = [
+    "https://www.amazon.fr/Vania-Kotydia-Protege-slips-Confort-Normal/product-reviews/B07SC8SH6W/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
+    "https://www.amazon.fr/Love-Green-Prot%C3%A8ge-slips-Flexi-28/product-reviews/B082VVDS19/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
+    "https://www.amazon.fr/Always-Dailies-Prot%C3%A8ge-Slips-Confortable-Absorbant/product-reviews/B0BRQRKW5K/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews",  # pylint: disable=line-too-long
+]
+
+### Selenium-related fixtures
 
 
 @pytest.fixture(scope="module")
-def driver():
-    """Create a headless Chrome driver."""
-    with get_driver() as driver:
-        yield driver
-    driver.quit()
+def test_driver() -> SeleniumDriver:
+    """Create a Selenium Driver."""
+    with get_driver() as x:
+        yield x
+    x.quit()
 
 
-@pytest.fixture(scope="module", params=PRODUCT_ASIN_LIST, ids=PRODUCT_ASIN_LIST)
-def product_page(request, driver):
+@pytest.fixture(scope="module", params=ASIN_LIST, ids=ASIN_LIST)
+def product_page(request, test_driver) -> SeleniumDriver:  # pylint: disable=redefined-outer-name
     """Set up the product page."""
+
     product_page_url = "https://www.amazon.fr/dp/" + request.param
-    driver.get(product_page_url)
-    return driver
+    test_driver.get(product_page_url)
+    return test_driver
 
 
 @pytest.fixture(
     scope="module", params=REVIEW_URLS, ids=[i.split("/")[-2] for i in REVIEW_URLS]
 )
-def review_page(driver, request):
+def review_page(request, test_driver) -> SeleniumDriver:  # pylint: disable=redefined-outer-name
     """Set up the review page."""
     review_page_url = request.param
-    driver.get(review_page_url)
-    return driver
+    test_driver.get(review_page_url)
+    return test_driver
 
 
 @pytest.fixture(scope="module")
-def search_page(driver):
+def search_page(test_driver) -> SeleniumDriver:  # pylint: disable=redefined-outer-name
     """Set up the search page."""
+    url = "https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"})
+    test_driver.get(url)
+    return test_driver
 
-    URL = "https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"})
-    driver.get(URL)
-    return driver
+
+### MongoDB-related fixtures
 
 
 @pytest.fixture(scope="module")
-def db_client():
+def db_client() -> DatabaseClient:
     """Create a MongoDB client."""
 
-    return DatabaseClient(action_type="Test")
+    with DatabaseClient(action_type="Test") as client:
+        yield client
+    client.close()
 
 
 @pytest.fixture(scope="module")
-def product():
+def product() -> dict:
     """Create a product."""
 
     return {
