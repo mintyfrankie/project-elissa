@@ -36,4 +36,4 @@ def scrape_review_page():
 if __name__ == "__main__":
     # scrape_search_page()
     # scrape_product_page()
-    scrape_review_page()
+    # scrape_review_page()
