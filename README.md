@@ -13,28 +13,30 @@ The repository is a monorepo for the Project Elissa. It intends to build a recom
 ```
 .
 ├── README.md
-├── mongodb/        # a Client for connecting to mongodb
-├── scraping/       # three Spiders for scraping data from websites
+├── mongodb/        # a client for connecting and querying to MongoDB databases
+├── scraping/       # scrapers and spider workers for getting informations
 ├── tests/          # pytest module for testing
-├── scripts/        # some handy scripts for DevOps
-├── deepnote/       # related jupyter notebooks hosted on Deepnote
-├── dashboard/
-├── api/
+├── dashboard/      # a Streamlit dashboard for displaying an interface for user interaction and visualisations
+├── api/            # a FastAPI module
 ```
 
 ## Modules
 
-### 1. Scraping
+### 1. Scraping - `Selenium`
 
-The project contains three dedicated spiders based on Selenium and headless Chrome for scraping data from websites. These spiders include:
+The scraping module uses `Selenium` for webdriver interactions. It contains mainly three parts:
 
-1. `SearchPageSpider`: a spider for scraping products' ASIN from search pages given a list of keywords.
-2. `ProductPageSpider`: a spider for scraping products' information from product pages given a list of ASINs.
-3. `ReviewPageSpider`: a spider for scraping reviews from review pages given a list of ASINs.
+1. `Search Page`: a spider for scraping products' ASIN from search pages given a list of keywords.
+2. `Product Page`: a spider for scraping products' information from product pages given a list of ASINs.
+3. `Review Page`: a spider for scraping reviews from review pages given a list of ASINs.
 
-### 2. Data Storage
+For each part, an `ItemScraper` is charged to scrape information around an item, and a `SpiderWorker` is charged to orchestrate the queue of `ItemScrapers`, communicate with the Database, and execute cronjob according to needs.
 
-The project adopts MongoDB as the database for storing data. The `DatabaseClient` class in `mongodb` module is a client for connecting to MongoDB. It provides methods for inserting, updating, and querying data for the spiders.
+### 2. Data Storage - `MongoDB`
+
+The project adopts MongoDB as the database for storing data. 
+
+The `DatabaseClient` class in `mongodb` module is a client for connecting to MongoDB. It provides methods for inserting, updating, and querying data for the spiders.
 
 ### 3. Data Modelling
 
@@ -44,18 +46,10 @@ The project adopts MongoDB as the database for storing data. The `DatabaseClient
 
 > Not Implemented
 
-### 5. Dashboarding and APIs
+### 5. APIs - `FastAPI`
 
 > Not Implemented
 
-### \*. Testing
+### \*. Testing - `pytest`
 
 The project uses `pytest` as the testing framework. The `tests` module contains test cases for the spiders and the database client.
-
-## TODO
-
-- [ ] Find ways to exclude irrelevant products in the database
-- [ ] Setup pytest Github CI/CD
-- [ ] Setup Dashboard Prototype
-- [ ] Setup devcontainer with selenium and chrome
-- [ ] Update README
