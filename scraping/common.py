@@ -54,7 +54,7 @@ def is_antirobot(driver: SeleniumDriver) -> bool:
 
     EXCUSE_TITLE = "nos excuses"
     title = driver.title.lower()
-    if EXCUSE_TITLE == title:
+    if EXCUSE_TITLE in title:
         return True
     return False
 

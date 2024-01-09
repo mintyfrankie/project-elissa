@@ -74,6 +74,7 @@ class ReviewItemScraper(BaseItemScraper):
         while url and (self._max_page == -1 or page_count < self._max_page):
             output = self.parse(url)
             if output.get("is_antirobot"):
+                self._is_anti_robot = True
                 break
             items = output.get("items")
             if items:
@@ -81,7 +82,7 @@ class ReviewItemScraper(BaseItemScraper):
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
-            random_sleep(0.1, 0.9)
+            # random_sleep(0.1, 0.9)
 
     def validate(self) -> bool:
         """Validate the operation, if anti-robot is not detected"""

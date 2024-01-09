@@ -10,6 +10,7 @@ from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import (
     EXCLUDE_KEYWORDS,
+    QUERY_KEYWORDS,
     SeleniumDriver,
     is_antirobot,
     is_captcha,
@@ -125,6 +126,8 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         self._asins = set()
         self._updated_asins = set()
         self.__kwargs = kwargs
+        if self._query is None:
+            self._query = QUERY_KEYWORDS
 
     def query(self) -> None:
         pass

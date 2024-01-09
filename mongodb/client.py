@@ -104,7 +104,7 @@ class DatabaseClient:
         Returns:
             int: The current counter value.
         """
-        doc = self.counter_collection.find_one(DatabaseCounter().get_id())
+        doc = self.counter_collection.find_one({"_id": "log_counter"})
         if doc is None:
             INITIAL_COUNT = 0
             document = DatabaseCounter(count=INITIAL_COUNT)
