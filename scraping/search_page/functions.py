@@ -1,3 +1,7 @@
+"""
+Contains functions to parse the search page.
+"""
+
 from types import SimpleNamespace
 from urllib.parse import urljoin
 
@@ -17,6 +21,8 @@ PATTERNS = SimpleNamespace(
 
 
 def get_mainframe(driver: SeleniumDriver) -> WebElement | None:
+    """Get the main frame of the search page."""
+
     try:
         return driver.find_element(By.XPATH, PATTERNS.main_frame)
     except NoSuchElementException:
@@ -24,10 +30,14 @@ def get_mainframe(driver: SeleniumDriver) -> WebElement | None:
 
 
 def get_asin_cards(main_frame: WebElement) -> list[WebElement]:
+    """Get the ASIN cards from the main frame."""
+
     return main_frame.find_elements(By.XPATH, PATTERNS.asins)
 
 
 def parse_asin_card(asin_card: WebElement) -> dict:
+    """Parse an ASIN card"""
+
     asin = asin_card.get_attribute("data-asin")
     if not asin:
         asin = ""
@@ -55,6 +65,8 @@ def parse_asin_card(asin_card: WebElement) -> dict:
 
 
 def get_nextpage(driver: SeleniumDriver) -> str | None:
+    """Get the url of the next page of a search page."""
+
     try:
         next_button = driver.find_element(By.XPATH, PATTERNS.pagination_next)
         url = urljoin("https://www.amazon.fr", next_button.get_attribute("href"))

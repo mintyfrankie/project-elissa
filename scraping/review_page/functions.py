@@ -1,3 +1,7 @@
+"""
+Contains functions to parse the review page.
+"""
+
 import re
 from datetime import datetime
 from types import SimpleNamespace
@@ -20,11 +24,15 @@ PATTERNS = SimpleNamespace(
 
 
 def get_review_cards(driver: SeleniumDriver) -> list[WebElement]:
+    """Get the review cards from the review page."""
+
     review_cards = driver.find_elements(By.XPATH, PATTERNS.review_card)
     return review_cards
 
 
 def get_rating(review_card: WebElement) -> int | None:
+    """Get the rating from a review card."""
+
     rating = review_card.find_elements(By.XPATH, PATTERNS.rating)
     if rating:
         rating = rating[0].get_attribute("textContent")
@@ -35,6 +43,8 @@ def get_rating(review_card: WebElement) -> int | None:
 
 
 def get_title(review_card: WebElement) -> str | None:
+    """Get the title from a review card."""
+
     title = review_card.find_elements(By.XPATH, PATTERNS.title)
     if title:
         title = title[0].get_attribute("textContent")
@@ -49,6 +59,8 @@ def get_title(review_card: WebElement) -> str | None:
 
 
 def get_metadata(review_card: WebElement) -> tuple[str, str] | None:
+    """Get the metadata from a review card, parse it and return a tuple of country and date."""
+
     metadata = review_card.find_elements(By.XPATH, PATTERNS.metadata)
     if metadata:
         metadata = metadata[0].get_attribute("textContent")
@@ -87,6 +99,8 @@ def get_metadata(review_card: WebElement) -> tuple[str, str] | None:
 
 
 def get_body(review_card: WebElement) -> str | None:
+    """Get the body from a review card."""
+
     body = review_card.find_elements(By.XPATH, PATTERNS.body)
     if body:
         body = body[0].get_attribute("textContent")
@@ -97,6 +111,8 @@ def get_body(review_card: WebElement) -> str | None:
 
 
 def get_next_page(driver: SeleniumDriver) -> str | None:
+    """Get the url of the next page of a review page."""
+
     next_page = driver.find_elements(By.XPATH, PATTERNS.next_page)
     if next_page:
         next_page = next_page[0].get_attribute("href")

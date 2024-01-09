@@ -1,3 +1,7 @@
+"""
+Contains functions to parse the product page.
+"""
+
 from types import SimpleNamespace
 from urllib.parse import urljoin
 
@@ -21,6 +25,8 @@ PATTERNS = SimpleNamespace(
 
 
 def is_target(driver: SeleniumDriver) -> bool:
+    """Check if the product page is a target page according to the breadcrumbs."""
+
     TARGET_TOP_CATEGORY = "Hygiène et Santé"
     breadcrumbs = driver.find_elements(By.ID, PATTERNS.category_id)
     if breadcrumbs:
@@ -35,6 +41,8 @@ def is_target(driver: SeleniumDriver) -> bool:
 
 
 def get_category(driver: SeleniumDriver) -> str | None:
+    """Get the lowest-level category from the breadcrumbs."""
+
     breadcrumbs = driver.find_elements(By.ID, PATTERNS.category_id)
     if breadcrumbs:
         breadcrumbs = breadcrumbs[0]
@@ -47,6 +55,8 @@ def get_category(driver: SeleniumDriver) -> str | None:
 
 
 def get_price(driver: SeleniumDriver) -> float | None:
+    """Get the price from the product page, according to three patterns."""
+
     price = driver.find_elements(By.XPATH, PATTERNS.price_1)
     if price:
         price = price[0].get_attribute("textContent")
@@ -84,6 +94,8 @@ def get_price(driver: SeleniumDriver) -> float | None:
 
 
 def get_title(driver: SeleniumDriver) -> str | None:
+    """Get the title from the product page."""
+
     title = driver.find_elements(By.ID, PATTERNS.title_id)
     if title:
         title = title[0].get_attribute("textContent")
@@ -95,6 +107,8 @@ def get_title(driver: SeleniumDriver) -> str | None:
 
 
 def get_brand(driver: SeleniumDriver) -> str | None:
+    """Get the brand from the product page."""
+
     brand = driver.find_elements(By.ID, PATTERNS.brand_id)
     if brand:
         brand = brand[0].get_attribute("textContent")
@@ -106,6 +120,8 @@ def get_brand(driver: SeleniumDriver) -> str | None:
 
 
 def get_avg_rating(driver: SeleniumDriver) -> float | None:
+    """Get the average rating from the product page."""
+
     rating = driver.find_elements(By.ID, PATTERNS.rating_id)
     if rating:
         rating = rating[0].get_attribute("title")
@@ -117,6 +133,8 @@ def get_avg_rating(driver: SeleniumDriver) -> float | None:
 
 
 def get_num_reviews(driver: SeleniumDriver) -> int | None:
+    """Get the number of reviews from the product page."""
+
     def split_num_reviews(num_reviews: str) -> int:
         num_reviews = num_reviews.strip().replace("\xa0", " ")
         elems = num_reviews.split(" ")[:-1]
@@ -136,6 +154,8 @@ def get_num_reviews(driver: SeleniumDriver) -> int | None:
 
 
 def get_feature_bullets(driver: SeleniumDriver) -> list[str] | None:
+    """Get the feature bullets from the product page."""
+
     feature_bullets = driver.find_elements(By.XPATH, PATTERNS.feature_bullets)
     if feature_bullets:
         feature_bullets = [
@@ -148,6 +168,8 @@ def get_feature_bullets(driver: SeleniumDriver) -> list[str] | None:
 
 
 def get_unities(driver: SeleniumDriver) -> int | None:
+    """Get the number of unities from the product page."""
+
     unities = driver.find_elements(By.XPATH, PATTERNS.unities)
     if unities:
         unities = unities[0].text
@@ -159,6 +181,8 @@ def get_unities(driver: SeleniumDriver) -> int | None:
 
 
 def get_review_url(driver: SeleniumDriver) -> str | None:
+    """Get the review url from the product page."""
+
     review_url = driver.find_elements(By.XPATH, PATTERNS.review_url)
     if review_url:
         review_url = review_url[0].get_attribute("href")
