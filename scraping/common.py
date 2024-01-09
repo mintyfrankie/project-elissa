@@ -21,11 +21,10 @@ BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari", "Undetected"]
 DEFAULT_BROWSER_TYPE = "Undetected"
 
 QUERY_KEYWORDS = {
-    "serviette femme",
+    "serviette hygiénique",
     "tampon femme",
     "cup menstruelle",
     "protege slip",
-    "culotte menstruelle",
 }
 
 EXCLUDE_KEYWORDS = {
