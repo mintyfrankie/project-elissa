@@ -1,3 +1,7 @@
+"""
+Define the ReviewItemScraper and ReviewPageSpiderWorker class.
+"""
+
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import (
@@ -8,10 +12,7 @@ from scraping.common import (
     solve_captcha,
 )
 from scraping.interfaces import ItemMetadata
-from scraping.pipelines import (
-    DEFAULT_PRODUCT_PAGE_PIPELINE,
-    DEFAULT_REVIEW_PAGE_PIPELINE,
-)
+from scraping.pipelines import DEFAULT_REVIEW_PAGE_PIPELINE
 
 from .functions import (
     get_body,
@@ -24,7 +25,9 @@ from .functions import (
 
 
 class ReviewItemScraper(BaseItemScraper):
-    """A scraper for scraping all review pages for an ASIN."""
+    """
+    A scraper for scraping all review pages for an ASIN.
+    """
 
     def __init__(
         self, driver: SeleniumDriver, starting_url: str, max_page: int = -1
@@ -34,6 +37,8 @@ class ReviewItemScraper(BaseItemScraper):
         self._is_anti_robot = False
 
     def parse(self, url: str) -> dict[str, list[str]]:
+        """Parse a review page by its url, return data and next page url."""
+
         self.driver.get(url)
 
         if is_antirobot(self.driver):
@@ -62,6 +67,8 @@ class ReviewItemScraper(BaseItemScraper):
         return {"next_page": next_page, "items": items}
 
     def run(self) -> None:
+        """Run the scraper that scrapes all review pages for an ASIN."""
+
         url = self._starting_url
         page_count = 0
         while url and (self._max_page == -1 or page_count < self._max_page):
@@ -77,13 +84,21 @@ class ReviewItemScraper(BaseItemScraper):
             random_sleep(0.1, 0.9)
 
     def validate(self) -> bool:
+        """Validate the operation, if anti-robot is not detected"""
+
         return not self._is_anti_robot
 
     def dump(self) -> list[dict]:
+        """Dump the data."""
+
         return self._data
 
 
 class ReviewPageSpiderWorker(BaseSpiderWorker):
+    """
+    A spider worker for scraping all review pages for a list of ASINs.
+    """
+
     default_pipeline = DEFAULT_REVIEW_PAGE_PIPELINE
 
     def __init__(
@@ -99,10 +114,14 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         self._queue = None
 
     def query(self) -> None:
+        """Query the database for ASINs to update."""
+
         asins = list(self.db.collection.aggregate(self._pipeline))
         self._queue = asins
 
     def run(self) -> None:
+        """Run the scraper that can iterate over a list of ASINs."""
+
         self.query()
         if self._pipeline == self.default_pipeline:
             print("Use default pipeline to query the database.")
@@ -134,6 +153,8 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         print(f"Updated {len(self._data)} items in total.")
 
     def log(self) -> dict:
+        """Log the session information."""
+
         self._meta["update_count"] = len(self._data)
         self._meta["updated_asins"] = list(self._queue)
         info = SessionLogInfo(**self._meta)

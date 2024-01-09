@@ -1,10 +1,13 @@
+"""
+Define the ProductItemScraper and ProductPageSpiderWorker class.
+"""
+
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
 from scraping.common import (
     SeleniumDriver,
     is_antirobot,
     is_captcha,
-    random_sleep,
     solve_captcha,
 )
 from scraping.interfaces import ItemMetadata, ProductItem
@@ -24,6 +27,10 @@ from .functions import (
 
 
 class ProductItemScraper(BaseItemScraper):
+    """
+    A scraper for scraping the product page for an ASIN.
+    """
+
     def __init__(
         self,
         driver: SeleniumDriver,
@@ -33,8 +40,11 @@ class ProductItemScraper(BaseItemScraper):
         self._url = starting_url
         self._is_antirobot = False
         self._to_filter = False
+        self._item = None
 
     def parse(self, url: str) -> dict:
+        """Parse a product page by its url, return data."""
+
         self.driver.get(url)
 
         if is_antirobot(self.driver):
@@ -60,24 +70,28 @@ class ProductItemScraper(BaseItemScraper):
         return item
 
     def run(self) -> None:
+        """Execuete the parse method."""
+
         url = self._starting_url
         item = self.parse(url)
         self._item = item
 
     def validate(self) -> bool:
-        return False if self._is_antirobot else True
+        """Validate the operation, if anti-robot is not detected"""
+
+        return not self._is_antirobot
 
     def dump(self) -> dict:
-        """
-        Returns the data stored in the object as a list of dictionaries.
+        """Dump the data."""
 
-        Returns:
-            dict: The data stored in the object.
-        """
         return self._item
 
 
 class ProductPageSpiderWorker(BaseSpiderWorker):
+    """
+    A spider worker for scraping the product page for a list of ASINs.
+    """
+
     default_pipeline = DEFAULT_PRODUCT_PAGE_PIPELINE
 
     def __init__(
@@ -88,12 +102,17 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
     ) -> None:
         super().__init__(driver, action_type)
         self._pipeline = pipeline or self.default_pipeline
+        self._queue = None
 
     def query(self) -> None:
+        """Query the database for a list of ASINs to update."""
+
         asins = self.db.collection.aggregate(self._pipeline)
         self._queue = [asin["asin"] for asin in asins]
 
     def run(self) -> None:
+        """Run the scraper that can iterate over a list of ASINs."""
+
         self.query()
         if self._pipeline == self.default_pipeline:
             print("Use default pipeline to query the database.")
@@ -127,6 +146,8 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         print(f"Updated {len(self._data)} items in total.")
 
     def log(self) -> dict:
+        """Log the scraping session."""
+
         self._meta["update_count"] = len(self._data)
         self._meta["updated_asins"] = self._queue
         info = SessionLogInfo(**self._meta)

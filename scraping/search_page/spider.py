@@ -1,3 +1,7 @@
+"""
+Define the SearchItemScraper and SearchPageSpiderWorker class.
+"""
+
 from urllib.parse import urlencode
 
 from mongodb.interfaces import SessionLogInfo
@@ -16,6 +20,10 @@ from .functions import get_asin_cards, get_mainframe, get_nextpage, parse_asin_c
 
 
 class SearchItemScraper(BaseItemScraper):
+    """
+    A scraper for scraping all search pages for a keyword.
+    """
+
     def __init__(
         self,
         driver: SeleniumDriver,
@@ -29,6 +37,8 @@ class SearchItemScraper(BaseItemScraper):
         self._is_antirobot = False
 
     def parse(self, url: str) -> dict[str, list[dict]]:
+        """Parse a search page by its url, return data and next page url."""
+
         self.driver.get(url)
 
         if is_antirobot(self.driver):
@@ -58,6 +68,8 @@ class SearchItemScraper(BaseItemScraper):
         return {"next_page": next_page, "items": items}
 
     def run(self) -> None:
+        """Run the scraper that can iterate over multiple pages."""
+
         url = self._starting_url
         page_count = 0
         while url:
@@ -75,29 +87,27 @@ class SearchItemScraper(BaseItemScraper):
             print(f"Scraped Page {page_count}")
 
     def validate(self) -> bool:
+        """Validate the operation, if anti-robot is not detected"""
+
         return not self._is_antirobot
 
     @property
     def asins(self) -> set[str]:
-        """
-        Returns a set of ASINs.
+        """Return the asins seen by the scraper."""
 
-        Returns:
-            set[str]: A set of ASINs.
-        """
         return self._asins
 
     def dump(self) -> list[BaseItem]:
-        """
-        Returns the data stored in the object as a list of dictionaries.
+        """Dump the data."""
 
-        Returns:
-            list[dict]: The data stored in the object.
-        """
         return self._data
 
 
 class SearchPageSpiderWorker(BaseSpiderWorker):
+    """
+    A SpiderWorker for scraping all search pages for a list of keywords.
+    """
+
     def __init__(
         self,
         driver: SeleniumDriver,
@@ -115,6 +125,8 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         pass
 
     def run(self) -> None:
+        """Call the ItemScraper iteratively to scrape a list of keywords."""
+
         existing_asins = self.db.get_asins()
         self._asins.update(existing_asins)
 
@@ -157,6 +169,8 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
         print(f"Total Updated: {len(self._data)}")
 
     def log(self) -> dict:
+        """Log the scraping session."""
+
         self._meta["update_count"] = len(self._data)
         self._meta["query_keywords"] = list(self._query)
         self._meta["updated_asins"] = list(self._updated_asins)

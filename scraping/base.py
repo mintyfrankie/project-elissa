@@ -24,7 +24,7 @@ class BaseItemScraper(ABC):
         self._data = []
 
     @abstractmethod
-    def parse(self) -> dict:
+    def parse(self, url: str) -> dict:
         """Parse a page and return the data."""
         raise NotImplementedError
 
