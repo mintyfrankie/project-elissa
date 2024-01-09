@@ -1,7 +1,7 @@
-from .common import SeleniumDriver, get_driver, random_sleep
-from .spiders.product_page import ProductPageSpiderWorker
-from .spiders.review_page import ReviewPageSpiderWorker
-from .spiders.search_page import SearchPageSpiderWorker
+from .common import SeleniumDriver, get_driver
+from .product_page.spider import ProductPageSpiderWorker
+from .review_page.spider import ReviewPageSpiderWorker
+from .search_page.spider import SearchPageSpiderWorker
 
 __all__ = [
     "SearchPageSpiderWorker",
@@ -9,5 +9,4 @@ __all__ = [
     "ReviewPageSpiderWorker",
     "SeleniumDriver",
     "get_driver",
-    "random_sleep",
 ]
