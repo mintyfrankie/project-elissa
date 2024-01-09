@@ -1,15 +1,18 @@
 """
-Base class for all spiders
+Contain a base class for all spiders
 """
 
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+from mongodb.client import DatabaseClient
+
 from .common import SeleniumDriver
 
 
 class BaseItemScraper(ABC):
-    """Base class for item scrapers.
+    """
+    Base class for an ItemScraper.
 
     A ItemScraper is a worker for processing a single item-object.
     It can be search page of a keyword, a product page, or review pages of a product.
@@ -21,7 +24,7 @@ class BaseItemScraper(ABC):
         self._data = []
 
     @abstractmethod
-    def parse(self) -> dict:
+    def parse(self, url: str) -> dict:
         """Parse a page and return the data."""
         raise NotImplementedError
 
@@ -42,9 +45,11 @@ class BaseItemScraper(ABC):
 
 
 class BaseSpiderWorker(ABC):
-    """Base class for functional spiders.
+    """
+    Base class for a SpiderWorker.
 
-    A Spider is a worker for processing a group of item-objects according to a specific action.
+    A SpiderWorker is a worker for processing a group of item-objects
+    according to a specific action.
     It takes upon a queue of items, and process them one by one.
     It also takes care of the database connection.
     """
@@ -54,8 +59,6 @@ class BaseSpiderWorker(ABC):
         driver: SeleniumDriver,
         action_type: str,
     ) -> None:
-        from mongodb.client import DatabaseClient
-
         self.driver = driver
         self.db = DatabaseClient(action_type=action_type)
         self._data = []

@@ -2,14 +2,11 @@
 
 
 from datetime import datetime
-from email import message
 
 import pandas as pd
 from bson import json_util
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-
-from scraping.interfaces import ProductItem
 
 from .interfaces import DatabaseCounter, SessionLog, SessionLogInfo
 
@@ -107,7 +104,7 @@ class DatabaseClient:
         Returns:
             int: The current counter value.
         """
-        doc = self.counter_collection.find_one(DatabaseCounter().get_id())
+        doc = self.counter_collection.find_one({"_id": "log_counter"})
         if doc is None:
             INITIAL_COUNT = 0
             document = DatabaseCounter(count=INITIAL_COUNT)
@@ -220,6 +217,8 @@ class DatabaseClient:
         return items
 
     def export_products(self) -> pd.DataFrame:
+        from scraping.interfaces import ProductItem
+
         project = {key: 1 for key in ProductItem.model_fields.keys()}
         project["_id"] = 0
 

@@ -5,27 +5,31 @@ Test the SearchPageSpider.
 
 from urllib.parse import urlencode
 
+from scraping import SearchPageSpiderWorker
 from scraping.common import QUERY_KEYWORDS
-from scraping.spiders.search_page import (
-    SearchItemScraper,
-    SearchPageSpiderWorker,
+from scraping.search_page.functions import (
     get_asin_cards,
     get_mainframe,
     get_nextpage,
     parse_asin_card,
 )
+from scraping.search_page.spider import SearchItemScraper
 
 
 class TestSearchPageFunctions:
-    """Test the SearchPageSpider."""
+    """
+    Test the SearchPageSpider.
+    """
 
     def test_get_mainframe(self, search_page):
         """Test if the main frame is found."""
+
         main_frame = get_mainframe(search_page)
         assert main_frame, "Main frame is not found"
 
     def test_get_asin_cards(self, search_page):
         """Test if the ASIN cards are found."""
+
         main_frame = get_mainframe(search_page)
         assert main_frame, "Main frame is not found"
         asin_cards = get_asin_cards(main_frame)
@@ -33,6 +37,7 @@ class TestSearchPageFunctions:
 
     def test_parse_asin_card(self, search_page):
         """Test if the ASIN card is parsed."""
+
         NUM_ASIN_CARDS_TO_TEST = 10
         MIN_AVAILABLE_ASIN_CARDS = 5
 
@@ -61,10 +66,11 @@ class TestSearchPageFunctions:
         assert next_page, "Page is not turned"
 
 
-def test_SearchItemScraper(driver):
+def test_SearchItemScraper(test_driver):
     """Test the SearchItemScraper."""
+
     scraper = SearchItemScraper(
-        driver=driver,
+        driver=test_driver,
         starting_url="https://www.amazon.fr/s?" + urlencode({"k": "tampon+femme"}),
         max_page=1,
     )
@@ -74,15 +80,13 @@ def test_SearchItemScraper(driver):
     assert scraper.validate(), "Data is not validated"
 
 
-def test_SearchPageSpiderWorker(driver):
+def test_SearchPageSpiderWorker(test_driver):
     """Test the SearchPageSpiderWorker."""
-    try:
-        with SearchPageSpiderWorker(
-            driver=driver,
-            action_type="Testing - pytest test_SearchPageSpiderWorker",
-            queue=list(QUERY_KEYWORDS)[0],
-            max_page=1,
-        ) as worker:
-            worker.run()
-    except Exception as e:
-        assert False, f"Exception raised: {e}"
+
+    with SearchPageSpiderWorker(
+        driver=test_driver,
+        action_type="Testing - pytest test_SearchPageSpiderWorker",
+        queue=list(QUERY_KEYWORDS)[0],
+        max_page=1,
+    ) as worker:
+        worker.run()

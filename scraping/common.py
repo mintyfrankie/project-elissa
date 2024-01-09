@@ -1,5 +1,9 @@
-"""Some common functions for Selenium spiders."""
+"""
+Contain some common functions and constants for scraping.
+"""
 
+import random
+import time
 from typing import Literal
 
 import undetected_chromedriver as uc
@@ -8,14 +12,19 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
+SeleniumDriver = (
+    webdriver.Chrome | webdriver.Firefox | webdriver.Edge | webdriver.Safari
+)
+BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari", "Undetected"]
+
+
 DEFAULT_BROWSER_TYPE = "Undetected"
 
 QUERY_KEYWORDS = {
-    "serviette femme",
+    "serviette hygiénique",
     "tampon femme",
     "cup menstruelle",
     "protege slip",
-    # "culotte menstruelle",
 }
 
 EXCLUDE_KEYWORDS = {
@@ -40,17 +49,19 @@ EXCLUDE_KEYWORDS = {
 }
 
 
-def is_antirobot(driver: webdriver.Chrome) -> bool:
-    """Check if the anti-robot page is displayed."""
+def is_antirobot(driver: SeleniumDriver) -> bool:
+    """Check if the `Nos Excuses` blocking page is displayed."""
 
-    TITLE_1 = "nos excuses"
+    EXCUSE_TITLE = "nos excuses"
     title = driver.title.lower()
-    if TITLE_1 in title == title:
+    if EXCUSE_TITLE in title:
         return True
     return False
 
 
-def is_captcha(driver: webdriver.Chrome) -> bool:
+def is_captcha(driver: SeleniumDriver) -> bool:
+    """Check if the captcha is displayed."""
+
     form_element = driver.find_elements(
         By.XPATH, "//form[@action='/errors/validateCaptcha']"
     )
@@ -59,8 +70,8 @@ def is_captcha(driver: webdriver.Chrome) -> bool:
     return False
 
 
-def solve_captcha(driver: webdriver.Chrome) -> bool:
-    """Solve the captcha."""
+def solve_captcha(driver: SeleniumDriver) -> bool:
+    """Solve the captcha using AmazonCaptcha."""
 
     form_element = driver.find_element(
         By.XPATH, "//form[@action='/errors/validateCaptcha']"
@@ -80,16 +91,10 @@ def solve_captcha(driver: webdriver.Chrome) -> bool:
     return True
 
 
-def is_filtered(title: str, filter: set[str]) -> bool:
+def is_filtered(title: str, filter_set: set[str]) -> bool:
     """Check if the title contains any of the filter words."""
 
-    return any(word.lower() in title.lower() for word in filter)
-
-
-SeleniumDriver = (
-    webdriver.Chrome | webdriver.Firefox | webdriver.Edge | webdriver.Safari
-)
-BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari", "Undetected"]
+    return any(word.lower() in title.lower() for word in filter_set)
 
 
 def get_driver(driver_type: BrowserType = DEFAULT_BROWSER_TYPE) -> SeleniumDriver:
@@ -123,13 +128,12 @@ def get_driver(driver_type: BrowserType = DEFAULT_BROWSER_TYPE) -> SeleniumDrive
     return driver
 
 
-def random_sleep(min: float = 0.3, max: float = 1.5, message: bool = True) -> float:
+def random_sleep(
+    min_time: float = 0.3, max_time: float = 1.5, message: bool = True
+) -> float:
     """Sleep for a random time between min and max seconds."""
 
-    import random
-    import time
-
-    sec = random.uniform(min, max)
+    sec = random.uniform(min_time, max_time)
     time.sleep(sec)
     if message:
         print(f"Sleeping for {sec:.2f} seconds.")
