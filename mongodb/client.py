@@ -223,7 +223,7 @@ class DatabaseClient:
         project = {key: 1 for key in ProductItem.model_fields.keys()}
         project["_id"] = 0
 
-        EXCLUDED_KEYS = ["_metadata", "review_url"]
+        EXCLUDED_KEYS = ["metadata", "review_url"]
         for key in EXCLUDED_KEYS:
             project.pop(key)
 
