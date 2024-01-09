@@ -1,4 +1,6 @@
-"""Some common functions for Selenium spiders."""
+"""
+Contain some common functions and constants for scraping.
+"""
 
 from typing import Literal
 

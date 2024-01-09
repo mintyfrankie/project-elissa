@@ -1,5 +1,5 @@
 """
-Interfaces for data validation in the pipeline.
+Contain interfaces for data validation in the pipeline.
 """
 
 from datetime import datetime
@@ -14,7 +14,7 @@ from pydantic import (
 )
 from pydantic_core import Url
 
-SCRAP_STATUS = Literal["SearchPage", "ProductPage", "ReviewPage"]
+ScrapeStatus = Literal["SearchPage", "ProductPage", "ReviewPage"]
 
 
 class ItemMetadata(BaseModel):
@@ -22,11 +22,11 @@ class ItemMetadata(BaseModel):
 
     last_session_id: int
     last_session_time: datetime
-    scrap_status: SCRAP_STATUS
+    scrap_status: ScrapeStatus
 
 
 class BaseItem(BaseModel):
-    """A base item added by SearchPageSpiderWorker"""
+    """A base item initialized by a SpiderWorker."""
 
     asin: str
     title: str | None
@@ -43,6 +43,7 @@ class BaseItem(BaseModel):
 
     @field_serializer("thumbnail")
     def url2str(self, val) -> str:
+        """Serializes the Url field to string"""
         if isinstance(val, Url):
             return str(val)
         return val
@@ -59,7 +60,7 @@ class ReviewItem(BaseModel):
 
 
 class ProductItem(BaseModel):
-    """A complete product document, extended by ProductPageSpiderWorker."""
+    """A complete product document, extended by SpiderWorkers."""
 
     asin: Optional[str] = None  # Will be added later
     price: float | None
@@ -74,6 +75,7 @@ class ProductItem(BaseModel):
 
     @field_serializer("review_url")
     def url2str(self, val) -> str:
+        """Serializes the Url field to string"""
         if isinstance(val, Url):
             return str(val)
         return val

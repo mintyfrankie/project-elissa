@@ -1,4 +1,6 @@
-from unittest.mock import DEFAULT
+"""
+Contain a list of default pipelines of SpiderWorkers to query the Database. 
+"""
 
 DEFAULT_PRODUCT_PAGE_PIPELINE = [
     {
