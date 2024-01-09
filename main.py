@@ -6,7 +6,7 @@ from scraping import (
 )
 from scraping.common import QUERY_KEYWORDS
 
-driver = get_driver("Undetected")
+driver = get_driver("Chrome")
 
 
 def scrape_search_page():
@@ -25,6 +25,6 @@ def scrape_review_page():
 
 
 if __name__ == "__main__":
-    # scrape_search_page()
+    scrape_search_page()
     scrape_product_page()
     # scrape_review_page()

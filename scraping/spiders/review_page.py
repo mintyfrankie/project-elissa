@@ -209,7 +209,7 @@ class ReviewItemScraper(BaseItemScraper):
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
-            random_sleep()
+            # random_sleep(message=False)
 
     def validate(self) -> bool:
         """

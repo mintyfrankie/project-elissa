@@ -157,7 +157,7 @@ class SearchItemScraper(BaseItemScraper):
             items = output.get("items")
             self._data.extend(items) if items else None
             url = output.get("next_page")
-            random_sleep(message=False)
+            # random_sleep(message=False)
             page_count += 1
             print(f"Scraped Page {page_count}")
 

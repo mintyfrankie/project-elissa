@@ -366,7 +366,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
-            # random_sleep()
+            # random_sleep(message=False)
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()
