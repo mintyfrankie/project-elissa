@@ -23,9 +23,6 @@ class ItemMetadata(BaseModel):
     last_session_id: int
     last_session_time: datetime
     scrap_status: SCRAP_STATUS
-    SearchItemScraper_version: Optional[int] = None
-    ProductItemScraper_version: Optional[int] = None
-    ReviewItemScraper_version: Optional[int] = None
 
 
 class BaseItem(BaseModel):
@@ -64,14 +61,15 @@ class ReviewItem(BaseModel):
 class ProductItem(BaseModel):
     """A complete product document, extended by ProductPageSpiderWorker."""
 
-    asin: Optional[str] = None
+    asin: Optional[str] = None  # Will be added later
     price: float | None
-    brand: str
+    brand: str | None
     avg_rating: float | None
     num_reviews: int | None
     feature_bullets: list[str] | None
     unities: float | None
     review_url: HttpUrl | None
+    category: str | None
     metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_serializer("review_url")

@@ -10,10 +10,14 @@ from selenium.webdriver.common.by import By
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.common import (
+    SeleniumDriver,
+    is_antirobot,
+    is_captcha,
+    random_sleep,
+    solve_captcha,
+)
 from scraping.interfaces import ItemMetadata, ProductItem
-
-ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     price_1="//span[contains(@class, 'apexPriceToPay')]//span[@class='a-offscreen']",
@@ -27,24 +31,53 @@ PATTERNS = SimpleNamespace(
     rating_id="acrPopover",
     num_reviews_id="acrCustomerReviewText",
     category_id="wayfinding-breadcrumbs_feature_div",
-    category_section=".//li[1]/a",
 )
 
 
-def check_category(driver: webdriver.Chrome) -> bool:
+def is_target(driver: webdriver.Chrome) -> bool:
     """
-    Check if the product is in the right category.
+    Check if the current page is the target page.
+
+    Args:
+        driver (webdriver.Chrome): The Chrome webdriver instance.
+
+    Returns:
+        bool: A boolean value indicating whether the current page is the target page.
     """
 
-    TARGET_CATEGORY = "Hygiène et Santé"
-    category = driver.find_elements(By.XPATH, PATTERNS.category_id)
-    if category:
-        category = category[0].find_elements(By.XPATH, PATTERNS.category_section)
-        if category:
-            category = category[0].get_attribute("textContent")
-            if category and TARGET_CATEGORY in category:
-                return True
+    TARGET_TOP_CATEGORY = "Hygiène et Santé"
+    breadcrumbs = driver.find_elements(By.ID, PATTERNS.category_id)
+    if breadcrumbs:
+        breadcrumbs = breadcrumbs[0]
+        elems = breadcrumbs.find_elements(By.XPATH, ".//li//a")
+        elems = [elem.text for elem in elems]
+        top_category = elems[0]
+        if top_category == TARGET_TOP_CATEGORY:
+            return True
+
     return False
+
+
+def get_category(driver: webdriver.Chrome) -> str | None:
+    """
+    Retrieves the category of a product from the given web driver.
+
+    Args:
+        driver (webdriver.Chrome): The web driver used to navigate the web page.
+
+    Returns:
+        str | None: The category of the product, or None if not found.
+    """
+
+    breadcrumbs = driver.find_elements(By.ID, PATTERNS.category_id)
+    if breadcrumbs:
+        breadcrumbs = breadcrumbs[0]
+        elems = breadcrumbs.find_elements(By.XPATH, ".//li//a")
+        elems = [elem.text for elem in elems]
+        sub_category = elems[-1]
+        return sub_category
+
+    return None
 
 
 def get_price(driver: webdriver.Chrome) -> float | None:
@@ -212,6 +245,7 @@ class ProductItemScraper(BaseItemScraper):
         super().__init__(driver, starting_url)
         self._url = starting_url
         self._is_antirobot = False
+        self._to_filter = False
 
     def parse(self, url: str) -> dict:
         """
@@ -228,6 +262,12 @@ class ProductItemScraper(BaseItemScraper):
         if is_antirobot(self.driver):
             self._is_antirobot = True
 
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
+
+        if not is_target(self.driver):
+            self._to_filter = True
+
         item = {
             "price": get_price(self.driver),
             "brand": get_brand(self.driver),
@@ -236,6 +276,7 @@ class ProductItemScraper(BaseItemScraper):
             "feature_bullets": get_feature_bullets(self.driver),
             "unities": get_unities(self.driver),
             "review_url": get_review_url(self.driver),
+            "category": get_category(self.driver),
         }
 
         return item
@@ -325,7 +366,7 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
         print(f"Found {len(self._queue)} items to update.")
 
         for asin in self._queue:
-            random_sleep()
+            # random_sleep(message=False)
             url = f"https://www.amazon.fr/dp/{asin}"
             scraper = ProductItemScraper(self.driver, url)
             scraper.run()
@@ -340,13 +381,13 @@ class ProductPageSpiderWorker(BaseSpiderWorker):
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ProductPage",
-                ProductItemScraper_version=ITEM_SCRAPER_VERSION,
             )
             item.metadata = metadata
 
             # update the database
             self._data.append(item)
             self.db.update_product(item.model_dump(by_alias=True))
+
             print(f"Updated {asin} -- Progress {len(self._data)}/{len(self._queue)}")
 
         print(f"Updated {len(self._data)} items in total.")

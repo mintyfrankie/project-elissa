@@ -20,11 +20,15 @@ def scrape_product_page():
 
 
 def scrape_review_page():
-    with ReviewPageSpiderWorker(driver=driver) as worker:
+    pipeline = [
+        {"$project": {"asin": 1, "_id": 0, "review_url": 1}},
+    ]
+
+    with ReviewPageSpiderWorker(driver=driver, pipeline=pipeline) as worker:
         worker.run()
 
 
 if __name__ == "__main__":
     # scrape_search_page()
-    scrape_product_page()
-    # scrape_review_page()
+    # scrape_product_page()
+    scrape_review_page()

@@ -16,12 +16,12 @@ from scraping.common import (
     EXCLUDE_KEYWORDS,
     SeleniumDriver,
     is_antirobot,
+    is_captcha,
     is_filtered,
     random_sleep,
+    solve_captcha,
 )
 from scraping.interfaces import BaseItem, ItemMetadata
-
-ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     main_frame="//span[@data-component-type='s-search-results']",
@@ -117,6 +117,9 @@ class SearchItemScraper(BaseItemScraper):
             print("Anti-robot check is triggered.")
             return {"is_antirobot": True}
 
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
+
         items = []
         main_frame = get_mainframe(self.driver)
         if main_frame == [] or main_frame is None:
@@ -154,7 +157,7 @@ class SearchItemScraper(BaseItemScraper):
             items = output.get("items")
             self._data.extend(items) if items else None
             url = output.get("next_page")
-            random_sleep(message=False)
+            # random_sleep(message=False)
             page_count += 1
             print(f"Scraped Page {page_count}")
 
@@ -165,7 +168,7 @@ class SearchItemScraper(BaseItemScraper):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-        return True if not self._is_anti_robot else False
+        return True if not self._is_antirobot else False
 
     @property
     def asins(self) -> set[str]:
@@ -283,11 +286,11 @@ class SearchPageSpiderWorker(BaseSpiderWorker):
                     last_session_id=self.session_id,
                     last_session_time=self._init_time,
                     scrap_status="SearchPage",
-                    SearchItemScraper_version=ITEM_SCRAPER_VERSION,
                 )
                 item.metadata = metadata
 
                 self.db.update_product(item.model_dump(by_alias=True))
+
             print(f"Updated {len(data)} items.")
 
         print(f"Total Updated: {len(self._data)}")

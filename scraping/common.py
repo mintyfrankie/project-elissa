@@ -2,8 +2,13 @@
 
 from typing import Literal
 
+import undetected_chromedriver as uc
+from amazoncaptcha import AmazonCaptcha
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
+DEFAULT_BROWSER_TYPE = "Undetected"
 
 QUERY_KEYWORDS = {
     "serviette femme",
@@ -39,11 +44,40 @@ def is_antirobot(driver: webdriver.Chrome) -> bool:
     """Check if the anti-robot page is displayed."""
 
     TITLE_1 = "nos excuses"
-    TITLE_2 = "amazon.fr"
     title = driver.title.lower()
-    if TITLE_1 in title or TITLE_2 == title:
+    if TITLE_1 in title == title:
         return True
     return False
+
+
+def is_captcha(driver: webdriver.Chrome) -> bool:
+    form_element = driver.find_elements(
+        By.XPATH, "//form[@action='/errors/validateCaptcha']"
+    )
+    if form_element:
+        return True
+    return False
+
+
+def solve_captcha(driver: webdriver.Chrome) -> bool:
+    """Solve the captcha."""
+
+    form_element = driver.find_element(
+        By.XPATH, "//form[@action='/errors/validateCaptcha']"
+    )
+    captcha_url = form_element.find_element(By.XPATH, "//img").get_attribute("src")
+    captcha = AmazonCaptcha.fromlink(captcha_url)
+    solution = captcha.solve()
+
+    input_field = form_element.find_element(By.ID, "captchacharacters")
+    input_field.send_keys(solution)
+
+    submit_button = form_element.find_element(By.XPATH, "//button[@type='submit']")
+    submit_button.click()
+
+    if is_captcha(driver):
+        return False
+    return True
 
 
 def is_filtered(title: str, filter: set[str]) -> bool:
@@ -52,16 +86,18 @@ def is_filtered(title: str, filter: set[str]) -> bool:
     return any(word.lower() in title.lower() for word in filter)
 
 
-type SeleniumDriver = (
+SeleniumDriver = (
     webdriver.Chrome | webdriver.Firefox | webdriver.Edge | webdriver.Safari
 )
-BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari"]
+BrowserType = Literal["Chrome", "Firefox", "Edge", "Safari", "Undetected"]
 
 
-def get_driver(driver_type: BrowserType = "Chrome") -> SeleniumDriver:
+def get_driver(driver_type: BrowserType = DEFAULT_BROWSER_TYPE) -> SeleniumDriver:
     """Get a Selenium driver."""
 
     match driver_type:
+        case "Undetected":
+            driver = uc.Chrome()
         case "Chrome":
             options = Options()
             options.add_argument("--headless")

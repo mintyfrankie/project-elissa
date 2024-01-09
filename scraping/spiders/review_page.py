@@ -13,10 +13,14 @@ from selenium.webdriver.remote.webelement import WebElement
 
 from mongodb.interfaces import SessionLogInfo
 from scraping.base import BaseItemScraper, BaseSpiderWorker
-from scraping.common import SeleniumDriver, is_antirobot, random_sleep
+from scraping.common import (
+    SeleniumDriver,
+    is_antirobot,
+    is_captcha,
+    random_sleep,
+    solve_captcha,
+)
 from scraping.interfaces import ItemMetadata
-
-ITEM_SCRAPER_VERSION: int = 1
 
 PATTERNS = SimpleNamespace(
     review_card="//div[@data-hook='review']",
@@ -159,11 +163,13 @@ class ReviewItemScraper(BaseItemScraper):
         """
 
         self.driver.get(url)
-        print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
             self._is_anti_robot = True
             return {"is_antirobot": True}
+
+        if is_captcha(self.driver):
+            solve_captcha(self.driver)
 
         review_cards = get_review_cards(self.driver)
         next_page = get_next_page(self.driver)
@@ -198,11 +204,12 @@ class ReviewItemScraper(BaseItemScraper):
             if output.get("is_antirobot"):
                 break
             items = output.get("items")
-            self._data.append(items) if items else None
+            if items:
+                self._data.extend(items)
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
-            random_sleep()
+            random_sleep(0.1, 0.9)
 
     def validate(self) -> bool:
         """
@@ -275,6 +282,7 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
         super().__init__(driver, action_type)
         self._pipeline = pipeline or self.DEFAULT_PIPELINE
         self.__kwargs = kwargs
+        self._queue = None
 
     def query(self) -> None:
         """
@@ -309,7 +317,6 @@ class ReviewPageSpiderWorker(BaseSpiderWorker):
                 last_session_id=self.session_id,
                 last_session_time=self._init_time,
                 scrap_status="ReviewPage",
-                ReviewItemScraper_version=ITEM_SCRAPER_VERSION,
             )
             elem["_metadata"] = dict(metadata)
 
