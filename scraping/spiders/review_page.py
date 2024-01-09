@@ -185,7 +185,7 @@ class ReviewItemScraper(BaseItemScraper):
                 item["body"] = get_body(review_card)
                 if metadata:
                     item["country"], item["date"] = metadata
-                items.append(item)
+                items.extend(item)
 
         return {"next_page": next_page, "items": items}
 
@@ -204,7 +204,7 @@ class ReviewItemScraper(BaseItemScraper):
             if output.get("is_antirobot"):
                 break
             items = output.get("items")
-            self._data.append(items) if items else None
+            self._data.extend(items) if items else None
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
