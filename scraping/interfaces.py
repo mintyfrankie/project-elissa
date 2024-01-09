@@ -18,7 +18,7 @@ ScrapeStatus = Literal["SearchPage", "ProductPage", "ReviewPage"]
 
 
 class ItemMetadata(BaseModel):
-    """Item metadata"""
+    """A metadata field of a document"""
 
     last_session_id: int
     last_session_time: datetime
@@ -43,7 +43,7 @@ class BaseItem(BaseModel):
 
     @field_serializer("thumbnail")
     def url2str(self, val) -> str:
-        """Serializes the Url field to string"""
+        """Serialize the Url field to string"""
         if isinstance(val, Url):
             return str(val)
         return val
@@ -75,7 +75,7 @@ class ProductItem(BaseModel):
 
     @field_serializer("review_url")
     def url2str(self, val) -> str:
-        """Serializes the Url field to string"""
+        """Serialize the Url field to string"""
         if isinstance(val, Url):
             return str(val)
         return val
