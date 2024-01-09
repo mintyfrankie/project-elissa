@@ -163,7 +163,6 @@ class ReviewItemScraper(BaseItemScraper):
         """
 
         self.driver.get(url)
-        print(f"##### Parsing URL: {url}")
 
         if is_antirobot(self.driver):
             self._is_anti_robot = True
@@ -209,7 +208,7 @@ class ReviewItemScraper(BaseItemScraper):
             url = output.get("next_page")
             page_count += 1
             print(f"Scraped Page {page_count}")
-            # random_sleep(message=False)
+            random_sleep(0.1, 0.9)
 
     def validate(self) -> bool:
         """
