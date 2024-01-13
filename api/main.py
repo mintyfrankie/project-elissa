@@ -4,8 +4,8 @@ Contains the main function for the API.
 
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Security
-from fastapi.security.api_key import APIKey, APIKeyCookie, APIKeyHeader, APIKeyQuery
+from fastapi import FastAPI, HTTPException, Path, Security
+from fastapi.security.api_key import APIKey, APIKeyHeader
 
 from mongodb import DatabaseClient
 from scraping.common import get_driver
@@ -22,18 +22,23 @@ api_keys = [
 api_key_header = APIKeyHeader(name="X-API-Key")
 
 
-def get_api_key(api_key_header: str = Security(api_key_header)) -> str:
+def get_api_key(header: str = Security(api_key_header)) -> str:
     """Check if the API key is valid."""
 
-    if api_key_header in api_keys:
-        return api_key_header
+    if header in api_keys:
+        return header
     raise HTTPException(
         status_code=401,
         detail="Invalid or missing API Key",
     )
 
 
-# TODO: add ASIN string query validation
+asin_validator = Path(
+    ...,
+    title="ASIN",
+    description="The ASIN of the product.",
+    regex=r"[A-Z0-9]{10}",
+)
 
 
 @app.get("/api/product/all")
@@ -55,7 +60,7 @@ async def get_all_product_asins():
 
 
 @app.get("/api/product/{asin}")
-async def query_product(asin: str):
+async def query_product(asin: str = asin_validator):
     """
     Query the product table for the given ASIN.
     """
@@ -78,7 +83,7 @@ async def search_product(category: str):
 
 @app.get("/api/scrape/product/{asin}")
 async def scrape_product(
-    asin: str, api_key: APIKey = Security(get_api_key)
+    asin: str = asin_validator, api_key: APIKey = Security(get_api_key)
 ) -> dict:  # ignore: W0613
     """
     Scrape the product page for the given ASIN.
@@ -96,7 +101,7 @@ async def scrape_product(
 
 @app.get("/api/scrape/review/{asin}")
 def scrape_review(
-    asin: str,
+    asin: str = asin_validator,
     max_page: int = 5,
     api_key: APIKey = Security(get_api_key),  # ignore: W0613
 ):
@@ -115,7 +120,9 @@ def scrape_review(
 
 
 @app.post("/api/submit/product")
-def submit_product(asin: str, api_key: APIKey = Security(get_api_key)):  # ignore: W0613
+def submit_product(
+    asin: str = asin_validator, api_key: APIKey = Security(get_api_key)
+):  # ignore: W0613
     """
     Submit a new request to scrape all the information for the given ASIN.
     """
