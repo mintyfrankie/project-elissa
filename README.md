@@ -45,7 +45,15 @@ The `DatabaseClient` class in `mongodb` module is a client for connecting to Mon
 
 ### 3. Data Modelling
 
-> Not Implemented
+1. **Labels definition** : use of LDA to point out the most common words and subjects
+
+2. **Tokenization** : Dependency parsing using spacy, so we can get more than one sentiment per review.
+
+3. **Linguistic analysis** : for a span to have a positive label there are two conditions, it needs to contain a predefined keyword and be associated by a neutral or positive sentiment. We included the neutral sentiment because some comments not being "positive enough" for the algortihm like "confortable et agréable" were identified as neutral when they were positive. On the other hand, for a span to be categorized under a negative label the conditions are that it needs to be associated with an obvious negative sentiment AND must contain a negative keyword.
+
+4. **Score per product** : then we grouped the dataset by asin (product) keeping the sum of positive and negative reviews for each label, as well as the total number of reviews per product.
+
+
 
 ### 4. Data Visualization
 
