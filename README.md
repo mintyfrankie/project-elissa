@@ -20,7 +20,12 @@ The repository is a monorepo for the Project Elissa. It intends to build a recom
 ├── api/            # a FastAPI module
 ```
 
-## Modules
+## Architecture
+
+<div align='center'>
+  <img width="3312" alt="Project Elissa - Architecture" src="https://github.com/mintyfrankie/project-elissa/assets/77310871/98c941a1-bd06-44bf-85c4-d7c29b299e1c">
+  <em align='center'>Project's Schema</em>
+</div>
 
 ### 1. Scraping - `Selenium`
 
