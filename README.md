@@ -4,7 +4,7 @@
 
 ## Introduction
 
-The repository is a monorepo for the Project Elissa. It intends to build a recommendation interface for feminine hygienic products based on their price, quality, customer reviews as well as users' preference.
+The repository is a monorepo for the Project Elissa. It intends to build a recommendation interface for feminine hygienic products based on their price, quality, customer reviews as well as users' preference. Based on the information and reviews scraped on an e-Commerce website, we proceed to analyse the documents with Natural Language Processing in order to gather users' opinion around a feminin hygenic product. 
 
 **The project is for educational purposes only and is not to be used commercially. The creators accept no liability for any misuse or damages. Use at your own risk.**
 
@@ -43,16 +43,17 @@ The project adopts MongoDB as the database for storing data.
 
 The `DatabaseClient` class in `mongodb` module is a client for connecting to MongoDB. It provides methods for inserting, updating, and querying data for the spiders.
 
-### 3. Data Modelling
+### 3. Data Mining - Natrual Language Processing on Reviews
 
-1. **Labels definition** : use of LDA to point out the most common words and subjects
+Based on the available data, we proceed with the folloing steps for leveraging the Natural Langauge Processing techniques.
 
-2. **Tokenization** : Dependency parsing using spacy, so we can get more than one sentiment per review.
+1. **Aspect Definition**: We conduct a Theme Modeling with Latent Dirichlet Allocation (LDA) for find out the most important themes and their related keywords in the reviews corpus.
+
+2. **Keywords Extraction**: With each of the aspect pre-defined from the aspects extracted from the previous theme modeling, we apply the TF-IDF Vectorizer algorithm to find out the most relevant and recurrent keywords around each aspect.
 
 3. **Linguistic analysis** : for a span to have a positive label there are two conditions, it needs to contain a predefined keyword and be associated by a neutral or positive sentiment. We included the neutral sentiment because some comments not being "positive enough" for the algortihm like "confortable et agréable" were identified as neutral when they were positive. On the other hand, for a span to be categorized under a negative label the conditions are that it needs to be associated with an obvious negative sentiment AND must contain a negative keyword.
 
 4. **Score per product** : then we grouped the dataset by asin (product) keeping the sum of positive and negative reviews for each label, as well as the total number of reviews per product.
-
 
 
 ### 4. Data Visualization
@@ -61,7 +62,7 @@ The `DatabaseClient` class in `mongodb` module is a client for connecting to Mon
 
 ### 5. APIs - `FastAPI`
 
-> Not Implemented
+The module of API built with `FastAPI` prodives some entry points for querying and updating products and submitting process request on new products based on their ASINs. Basic API-Key authentication as well as query parameters validation have been implemented.
 
 ### \*. Testing - `pytest`
 
