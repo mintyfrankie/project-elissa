@@ -2,6 +2,8 @@
 Contains the main function for the API.
 """
 
+# TODO: add pytest cases for the API
+
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Path, Security
