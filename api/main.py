@@ -78,9 +78,26 @@ async def query_product(asin: str = asin_validator):
 
 
 @app.get("/api/product/search")
-async def search_product(category: str):
-    # TODO: Can search by category, price_range
-    pass
+async def search_product(
+    category: str, min_price: float | None, max_price: float | None
+):
+    """Search for products in the database according to the given parameters."""
+    pipeline = [
+        {
+            "$match": {
+                "category": category,
+                "price": {"$gte": min_price, "$lte": max_price},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "_metadata": 0,
+            }
+        },
+    ]
+    products = list(db.collection.aggregate(pipeline))
+    return products
 
 
 @app.get("/api/scrape/product/{asin}")
