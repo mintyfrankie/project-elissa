@@ -25,6 +25,7 @@ Our project commenced with a comprehensive market analysis, identifying the lack
 ├── mongodb/        # a client for connecting and querying to MongoDB databases
 ├── scraping/       # scrapers and spider workers for getting informations
 ├── tests/          # pytest module for testing
+├── visualisation/  # a Jupyter notebook for analysing and visualising our output
 ├── dashboard/      # a Streamlit dashboard for displaying an interface for user interaction and visualisations
 ├── api/            # a FastAPI module
 ```
@@ -67,7 +68,21 @@ Based on the available data, we proceed with the folloing steps for leveraging t
 
 ### 4. Data Visualization
 
-> Not Implemented
+In our comprehensive analysis of menstrual products sourced from the e-commerce website, we aimed to unravel valuable insights by examining various aspects such as product categories, customer reviews, countries of sale, and other pertinent variables. Through a systematic exploration, we sought to achieve three primary objectives:
+
+**1.⁠ ⁠Identifying the Most Relevant Product Categories**
+
+Our initial exploration focused on discerning the product categories with the greatest diversity. Tampons as the singular product with the highest variety. Pads and other singular-use products emerge as the second most varied category, while reusable products like cups and menstrual underwear exhibit the least variety. This analysis provides a foundation for understanding the landscape of available menstrual products.
+
+**2. Analyzing Consumer Interest Through Reviews**
+
+To delve into consumer interest and preferences, we conducted an in-depth analysis of keywords prevalent in product reviews. 
+
+**3.⁠ ⁠Evaluating Product Performance and Consumer Sentiment**
+
+We delved into the top 10 products in each category, considering the average review score. Additionally, we explore the differences in ratings between reusable and non-reusable products, providing valuable insights into consumer satisfaction.
+
+These analyses collectively aim to unravel the intricate dynamics surrounding menstrual products, offering nuanced perspectives on consumer preferences, product performance, and potential biases in the data. By combining data scraping, machine learning, and visualizations, our objective is to empower individuals with informed choices regarding menstrual products, fostering a community of conscious and confident decision-makers for their menstrual health.
 
 ### 5. APIs - `FastAPI`
 
