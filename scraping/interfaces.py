@@ -5,6 +5,7 @@ Contain interfaces for data validation in the pipeline.
 from datetime import datetime
 from typing import Literal, Optional
 
+from matplotlib.image import thumbnail
 from pydantic import (
     BaseModel,
     Field,
@@ -63,6 +64,8 @@ class ProductItem(BaseModel):
     """A complete product document, extended by SpiderWorkers."""
 
     asin: Optional[str] = None  # Will be added later
+    title: str | None
+    thumbnail: HttpUrl | None
     price: float | None
     brand: str | None
     avg_rating: float | None
@@ -74,6 +77,7 @@ class ProductItem(BaseModel):
     metadata: Optional[ItemMetadata] = Field(None, serialization_alias="_metadata")
 
     @field_serializer("review_url")
+    @field_serializer("thumbnail")
     def url2str(self, val) -> str:
         """Serialize the Url field to string"""
         if isinstance(val, Url):
