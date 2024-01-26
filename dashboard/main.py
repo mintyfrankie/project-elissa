@@ -7,6 +7,13 @@ max_price = products["price"].max()
 num_products = len(products)
 
 CATEGORY_OPTIONS = list(products["category"].unique())
+CATEGORY_DISPLAY = {
+    "Tampons": "Tampons",
+    "Serviettes": "Pads",
+    "Coupes": "Cups",
+    "Protèges-Slips": "Liners",
+    "Culottes Menstruelles": "Period Underwear",
+}
 TAG_OPTIONS = list(
     [
         tag.replace("_score", "").capitalize()
@@ -14,6 +21,15 @@ TAG_OPTIONS = list(
         if tag.endswith("_score")
     ]
 )
+TAG_DISPLAY = {
+    "Price": "Price",
+    "Leak": "Leak-proof",
+    "Absorb": "Absorbency",
+    "Comfort": "Comfort",
+    "Material": "Organic Material",
+    "Package": "Great Packaging",
+    "Size": "Size Options",
+}
 
 products_column_config = {
     "thumbnail": st.column_config.ImageColumn("Thumbnail", width="medium"),
@@ -28,15 +44,20 @@ products_column_config = {
 }
 
 
-st.header("Products Dashboard")
+st.header("Elissa")
 
 with st.sidebar:
     st.title("Filters")
     st.write("Use these filters to explore the products")
     category_option = st.multiselect(
-        "Category", CATEGORY_OPTIONS, default=CATEGORY_OPTIONS
+        "Category",
+        CATEGORY_OPTIONS,
+        default=CATEGORY_OPTIONS,
+        format_func=CATEGORY_DISPLAY.get,
     )
-    tags_option = st.multiselect("Tags", TAG_OPTIONS, default=None)
+    tags_option = st.multiselect(
+        "Tags", TAG_OPTIONS, default=None, format_func=TAG_DISPLAY.get
+    )
     price_range = st.slider(
         "Price Range (euros)", min_price, max_price, (min_price, max_price)
     )
