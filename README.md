@@ -27,7 +27,6 @@ Our project commenced with a comprehensive market analysis, identifying the lack
 ├── tests/          # pytest module for testing
 ├── visualisation/  # a Jupyter notebook for analysing and visualising our output
 ├── dashboard/      # a Streamlit dashboard for displaying an interface for user interaction and visualisations
-├── api/            # a FastAPI module
 ```
 
 ## Architecture
