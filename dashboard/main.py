@@ -1,7 +1,14 @@
 import pandas as pd
 import streamlit as st
 
+st.set_page_config(
+    page_title="Elissa",
+    page_icon="🩸",
+    layout="wide",
+)
+
 products = pd.read_csv("data/dashboard.csv")
+products = products[products["category"].apply(lambda x: x == x)]
 min_price = products["price"].min()
 max_price = products["price"].max()
 num_products = len(products)
@@ -44,7 +51,7 @@ products_column_config = {
 }
 
 
-st.header("Elissa")
+st.header("Project Elissa")
 
 with st.sidebar:
     st.title("Filters")
@@ -53,7 +60,7 @@ with st.sidebar:
         "Category",
         CATEGORY_OPTIONS,
         default=CATEGORY_OPTIONS,
-        format_func=CATEGORY_DISPLAY.get,
+        # format_func=CATEGORY_DISPLAY.get,
     )
     tags_option = st.multiselect(
         "Tags", TAG_OPTIONS, default=None, format_func=TAG_DISPLAY.get
