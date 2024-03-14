@@ -1,133 +1,45 @@
 import pandas as pd
 import streamlit as st
+from st_pages import Page, add_page_title, show_pages
 
 st.set_page_config(
     page_title="Elissa",
     page_icon="🩸",
     layout="wide",
 )
-
-products = pd.read_csv("data/dashboard.csv")
-products = products[products["category"].apply(lambda x: x == x)]
-min_price = products["price"].min()
-max_price = products["price"].max()
-num_products = len(products)
-
-CATEGORY_OPTIONS = list(products["category"].unique())
-CATEGORY_DISPLAY = {
-    "Tampons": "Tampons",
-    "Serviettes": "Pads",
-    "Coupes": "Cups",
-    "Protèges-Slips": "Liners",
-    "Culottes Menstruelles": "Period Underwear",
-}
-TAG_OPTIONS = list(
+show_pages(
     [
-        tag.replace("_score", "").capitalize()
-        for tag in products.columns
-        if tag.endswith("_score")
+        Page("dashboard/main.py", "Home", "🏠"),
+        Page("dashboard/pages/engine.py", "Searching Engine", "🔧"),
+        Page("dashboard/pages/visualization.py", "Visualization", "📊"),
     ]
 )
-TAG_DISPLAY = {
-    "Price": "Price",
-    "Leak": "Leak-proof",
-    "Absorb": "Absorbency",
-    "Comfort": "Comfort",
-    "Material": "Organic Material",
-    "Package": "Great Packaging",
-    "Size": "Size Options",
-}
 
-products_column_config = {
-    "thumbnail": st.column_config.ImageColumn("Thumbnail", width="medium"),
-    "asin": st.column_config.LinkColumn("Link", display_text="Link"),
-    "title": "Title",
-    "brand": "Brand",
-    "avg_rating": "Avg. Rating",
-    "num_reviews": "Num. Reviews",
-    "category": "Category",
-    "price": "Price",
-    "unities": "Unities",
-}
+add_page_title()
 
-
-st.header("Project Elissa")
-
-with st.sidebar:
-    st.title("Filters")
-    st.write("Use these filters to explore the products")
-    category_option = st.multiselect(
-        "Category",
-        CATEGORY_OPTIONS,
-        default=CATEGORY_OPTIONS,
-        # format_func=CATEGORY_DISPLAY.get,
-    )
-    tags_option = st.multiselect(
-        "Tags", TAG_OPTIONS, default=None, format_func=TAG_DISPLAY.get
-    )
-    price_range = st.slider(
-        "Price Range (euros)", min_price, max_price, (min_price, max_price)
-    )
-
-
-df_display = products.query("category == @category_option").query(
-    "price >= @price_range[0] and price <= @price_range[1]"
-)
-for tag in tags_option:
-    df_display = df_display.query(f"{tag.lower()}_rank < (@num_products / 10)")
-df_display["total_score"] = df_display[
-    [f"{tag.lower()}_score" for tag in tags_option]
-].mean(axis=1)
-df_display["total_rank"] = df_display["total_score"].rank(ascending=False)
-df_display = df_display.sort_values(
-    ["num_reviews", "total_rank"], ascending=[True, False]
+st.image(
+    "https://github.com/mintyfrankie/project-elissa/assets/77310871/b0a7f22d-da23-4b3b-84e2-419fc4b2d1ec"
 )
 
-num_eligible_products = len(df_display)
+st.markdown(
+    """
 
+# Project Elissa - Albert School
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Total Products", num_products)
-with col2:
-    st.metric("Eligible Products", num_eligible_products)
-with col3:
-    st.metric("Average Rating", df_display["avg_rating"].mean().__round__(2))
+## Introduction
 
-tab1, tab2 = st.tabs(["Card View", "Table View"])
+The repository is a monorepo for the Project Elissa. It intends to build a recommendation interface for feminine hygienic products based on their price, quality, customer reviews as well as users' preference. Based on the information and reviews scraped on an e-Commerce website, we proceed to analyse the documents with Natural Language Processing in order to gather users' opinion around a feminin hygenic product. 
 
+**The project is for educational purposes only and is not to be used commercially. The creators accept no liability for any misuse or damages. Use at your own risk.**
 
-def display_grid(df: pd.DataFrame):
-    def crop_title(title, max_length=40):
-        if len(title) > max_length:
-            return title[:max_length] + "..."
-        return title
+1. **Project Objectives**
+Our mission is to empower individuals by providing them with informed choices regarding menstrual products. Recognizing the existing lack of comprehensive information, we leverage cutting-edge technology, including scraping, machine learning, APIs, and data visualization, to create a personalized platform. We aim to enhance user well-being by offering a seamless experience, allowing users to select menstrual products aligned with their preferences, health needs, and budget. Through innovation and user-centric design, our goal is to revolutionize the menstrual product landscape, fostering a community of individuals who make confident and conscious choices for their menstrual health.
 
-    n = len(df)
-    rows = (n + 2) // 3
+2. **Key Stats and Context**
+The composition of menstrual pads includes dioxins, perfume additives, oils, alcohols, aluminum, pesticide residue, halogenated derivatives residue, and endocrine disruptors. Examining French women's product usage, we find that sanitary towels are the most commonly used (41%), followed by single-use tampons (24%), menstrual panties (11%), menstrual cups (10%), washable sanitary towels (7%), and other options like toilet paper, free-flow instances, etc. Key statistics indicate that Period Poverty affected 4 million people in 2022 (up from 2 million in 2021), and that menstrual protection constitutes 13% of household waste. France has announced free menstrual products for women under 25, following the footsteps of Scotland (2020) and Britain (2021). Challenges in menstrual product accessibility in France include the limitation of free products until the age of 25, the exclusion of pain medication, and the implementation of EU - Ecolabel criteria for reusable products with a focus on reducing single-use plastics and toxins.
 
-    for i in range(rows):
-        cols = st.columns(3)
-        for j in range(3):
-            df_index = i * 3 + j
-            if df_index < n:
-                with cols[j]:
-                    with st.container(border=True, height=500):
-                        st.image(df.iloc[df_index]["thumbnail"], width=200)
-                        st.write(f"**{crop_title(df.iloc[df_index]['title'])}**")
-                        st.link_button("Link", df.iloc[df_index]["asin"])
-                        st.write(
-                            f"*{df.iloc[df_index]['brand']}* - {df.iloc[df_index]['category']}"
-                        )
-                        st.write(f"Price: {df.iloc[df_index]['price']}€")
-                        composite_score = df.iloc[df_index]["total_score"].__round__(2)
-                        if composite_score is not None:
-                            st.write(f"Composite Score: {composite_score}")
+3. **Methodology**
+Our project commenced with a comprehensive market analysis, identifying the lack of information on the environmental impact and health implications of menstrual products. To address this, we initiated the project by scraping data, training a machine learning algorithm, answering business needs, and creating an API. We focused on menstrual pads, tampons, menstrual cups, and menstrual underwear. The primary issues addressed were the lack of clarity on suitable products, the environmental impact of menstrual waste, and the hidden health consequences associated with using unsuitable products.
 
-
-with tab1:
-    display_grid(df_display)
-
-
-with tab2:
-    st.dataframe(df_display, column_config=products_column_config, hide_index=True)
+"""
+)
